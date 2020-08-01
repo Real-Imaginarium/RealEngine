@@ -150,4 +150,13 @@ std::string to_string( const ListState& val )
         ", ListState.beginPos: " + std::to_string( val.begin_pos ) +
         ", ListState.endPos: " + std::to_string( val.end_pos );
 }
+
+int random_int( int min, int max )
+{
+    std::random_device dev;
+    std::mt19937 rng( dev() );
+    std::uniform_int_distribution<std::mt19937::result_type> distr( min, max );
+    return distr( rng );
+}
+
 }// utils

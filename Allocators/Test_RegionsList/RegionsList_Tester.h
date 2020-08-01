@@ -65,6 +65,9 @@ public:
 	// Проверяет вставки в RegionsList (разной ширины, смежные и нет - во всём многообразии). Изначально RegionsList хранит 5 равноудалённых регионов разной ширины
 	void Test_InsertionsComplex();
 
+	// Проверяет случайно многократные захват/вставку из/в RegionsList
+	void Test_GrabbingsInsertionsRandom();
+
 private:
 	void GenerateInsertionsComplex( std::vector<std::string>& out_insertions_str );
 
@@ -104,6 +107,11 @@ public:
 
 	template<class ListType>
 	static void CheckFootprintsVsState( const ListState& state, const ListFootprints& footpr, Error_BasePtr& err );
+
+	template<class ListType>
+	static void CheckIfContentOutOfBounds( const std::vector<ListType>& content, size_t addr_start, size_t addr_stop, Error_BasePtr& err );
+
+	static void CheckListsCompliance( const std::vector<Region_P>& p_vec, const std::vector<Region_S>& s_vec, Error_BasePtr& err );
 };
 
 

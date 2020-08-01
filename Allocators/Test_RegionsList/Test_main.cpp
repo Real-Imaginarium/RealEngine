@@ -27,7 +27,7 @@ int main(int argc, const char** argv)
 		return 0;
 	}
 	
-	bool AllTests = args_str.find( "--All" ) != std::string::npos;
+	bool AllTests = args_str.find( "--All" ) != std::string::npos || argc == 1;
 	bool DoubleInserion = args_str.find( "--DoubleInserion" ) != std::string::npos;
 	bool OverlappedInsertion = args_str.find( "--OverlappedInsertion" ) != std::string::npos;
 	bool GrabbingFromEmptyList = args_str.find( "--GrabbingFromEmptyList" ) != std::string::npos;
@@ -44,6 +44,7 @@ int main(int argc, const char** argv)
 	bool GrabbingFromSingleSizedList = args_str.find( "--GrabbingFromSingleSizedList" ) != std::string::npos;
 	bool GrabingsComplex = args_str.find( "--GrabingsComplex" ) != std::string::npos;
 	bool InsertionsComplex = args_str.find( "--InsertionsComplex" ) != std::string::npos;
+	bool GrabbingsInsertionsRandom = args_str.find( "--GrabbingsInsertionsRandom" ) != std::string::npos;
 
 	std::string iterations_str = utils::FindStrRegular( args_str, Regex( "[\\s]+--iterations[\\s=]+\\d+" ), founded, err );
 	iterations_str = utils::FindStrRegular( iterations_str, Regex( "\\d+" ), founded, err );
@@ -101,7 +102,11 @@ int main(int argc, const char** argv)
 		if (InsertionsComplex || AllTests) {
 			tester->Test_InsertionsComplex();
 		}
+		if (GrabbingsInsertionsRandom || AllTests) {
+			tester->Test_GrabbingsInsertionsRandom();
+		}
 	}
+	system( "Pause" );
 	return 0;
 }
 

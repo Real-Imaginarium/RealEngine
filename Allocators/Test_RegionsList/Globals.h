@@ -9,25 +9,61 @@
 
 struct TestCell
 {
+	TestCell( size_t i = 0 )
+		: field_1( 0 ), field_2( 0 ), field_3( 0 ), field_4( 0 ), field_5( 0 ), field_6( 0 ), field_7( i )
+	{};
 	uint32_t	field_1;
 	uint32_t	field_2;
 	float		field_3;
 	uint16_t	field_4;
 	char		field_5;
 	char		field_6;
+	size_t		field_7;
+
+	TestCell& operator+=( size_t r_op ) {
+		this->field_7 += r_op;
+		return *this;
+	}
+	TestCell& operator-=( size_t r_op ) {
+		this->field_7 -= r_op;
+		return *this;
+	}
+	bool operator==( size_t r_op ) {
+		return (this->field_7 == r_op);
+	}
+	bool operator!=( size_t r_op ) {
+		return !(*this == r_op);
+	}
 };
 
 struct DescriptorHandler
 {
+	DescriptorHandler( size_t i = 0 )
+		: desc_handle( 0 ), index_in_heap( i )
+	{};
 	uint64_t desc_handle;
 	uint64_t index_in_heap;
+
+	DescriptorHandler& operator+=( size_t r_op ) {
+		this->index_in_heap += r_op;
+		return *this;
+	}
+	DescriptorHandler& operator-=( size_t r_op ) {
+		this->index_in_heap -= r_op;
+		return *this;
+	}
+	bool operator==( size_t r_op ) {
+		return (this->index_in_heap == r_op);
+	}
+	bool operator!=( size_t r_op ) {
+		return !(*this == r_op);
+	}
 };
 
 /*Раскомментировать нужный тип*/
-
 //using CELL = TestCell;
-//using CELL = DescriptorHandler;
-using CELL = uint8_t;
+using CELL = DescriptorHandler;
+//using CELL = uint8_t;
 
 
 class Globals

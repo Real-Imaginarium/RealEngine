@@ -16,6 +16,7 @@
 #include <iostream>
 #include <sstream>
 #include <limits>
+#include <random>
 
 
 #define TRACE_RETURN(e, mess, ret_val) {        \
@@ -45,6 +46,12 @@
 #define TRACE_CONTINUE(e, mess) {               \
     if(Error_Base::Trace(e, mess, PLACE())) {   \
         continue;                               \
+    }                                           \
+};
+
+#define TRACE_BREAK(e, mess) {               \
+    if(Error_Base::Trace(e, mess, PLACE())) {   \
+        break;                               \
     }                                           \
 };
 
@@ -157,6 +164,8 @@ inline std::string to_string( const std::vector<RegionS<T>>& obj );    // "[6149
 std::string to_string( const ListFootprints& val );
 
 std::string to_string( const ListState& val );
+
+int random_int( int min, int max );
 }
 
 /*  Ќабор операторов сравнени€ дл€ различных типов  */
@@ -171,6 +180,12 @@ inline bool operator!=( const RegionP<T>& left, const RegionP<T>& right );
 
 template<class T>
 inline bool operator!=( const RegionS<T>& left, const RegionS<T>& right );
+
+template<class T>
+RegionP<T> operator+( const RegionP<T>& l_op, size_t r_op );
+
+template<class T>
+RegionP<T> operator-( const RegionP<T>& l_op, size_t r_op );
 
 
 namespace utils
@@ -677,6 +692,7 @@ namespace utils
     }
 } // utils
 
+
 /*  Ќабор операторов сравнени€ дл€ различных типов  */
 template<class T>
 bool operator==( const RegionP<T>& left, const RegionP<T>& right ) {
@@ -696,4 +712,22 @@ bool operator!=( const RegionP<T>& left, const RegionP<T>& right ) {
 template<class T>
 bool operator!=( const RegionS<T>& left, const RegionS<T>& right ) {
     return !(left == right);
+}
+
+template<class T>
+RegionP<T> operator+( const RegionP<T>& l_op, size_t r_op )
+{
+    RegionP<T> res = l_op;
+    for (size_t i = 0; i < res.size; ++i)
+        res.start[i] += r_op;
+    return res;
+}
+
+template<class T>
+RegionP<T> operator-( const RegionP<T>& l_op, size_t r_op )
+{
+    RegionP<T> res = l_op;
+    for (size_t i = 0; i < res.size; ++i)
+        res.start[i] -= r_op;
+    return res;
 }

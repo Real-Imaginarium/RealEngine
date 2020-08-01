@@ -1,6 +1,5 @@
 #include "Globals.h"
 
-
 typedef Globals::Ins_complex Ins_complex;
 
 

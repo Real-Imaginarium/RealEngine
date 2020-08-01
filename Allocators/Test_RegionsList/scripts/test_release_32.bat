@@ -1,0 +1,1 @@
+start test_worker.bat x86 Release 1 "--iterations=5 --All"

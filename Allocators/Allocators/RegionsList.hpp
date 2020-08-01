@@ -146,6 +146,9 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
 				return nullptr;
 			}
 			// Добавляем новый регион правее. Место справа уменьшается, конец списка сдвигается вправо.
+			if (!m_p_list_spaceRight) {
+				ExpandList<RegionP<T>>();
+			}
 			*m_p_list_end++ = region;
 			++m_p_list_size;
 			--m_p_list_spaceRight;
@@ -165,6 +168,9 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
 				return nullptr;
 			}
 			// Добавляем новый регион левее. Место слева уменьшается, начало списка сдвигается влево.
+			if (!m_p_list_spaceLeft) {
+				ExpandList<RegionP<T>>();
+			}
 			*(--m_p_list_begin) = region;
 			++m_p_list_size;
 			--m_p_list_spaceLeft;
@@ -172,22 +178,34 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
 												// Работаем с Size-списком
 		// Если попадаем правее
 		if (region.size > m_s_list_begin->size) {
+			if (!m_s_list_spaceRight) {
+				ExpandList<RegionS<T>>();
+			}
 			*m_s_list_end++ = { region.start, region.size, 1 };
 			--m_s_list_spaceRight;
 		}
 		// Если попадаем левее
 		else if (region.size < m_s_list_begin->size) {
+			if (!m_s_list_spaceLeft) {
+				ExpandList<RegionS<T>>();
+			}
 			*(--m_s_list_begin) = { region.start, region.size, 1 };
 			--m_s_list_spaceLeft;
 		}
 		// Если ширина добавляемого фрагмента совпадает с шириной уже имеющегося - сортируем их по указателям.
 		else {
 			if (region.start > m_s_list_begin->start) {
+				if (!m_s_list_spaceRight) {
+					ExpandList<RegionS<T>>();
+				}
 				m_s_list_begin->count = 2;
 				*m_s_list_end++ = { region.start, region.size, 0 };
 				--m_s_list_spaceRight;
 			}
 			else {
+				if (!m_s_list_spaceLeft) {
+					ExpandList<RegionS<T>>();
+				}
 				m_s_list_begin->count = 0;
 				*(--m_s_list_begin) = { region.start, region.size, 2 };
 				--m_s_list_spaceLeft;
