@@ -579,6 +579,8 @@ void RegionsList<T>::ExpandList()
 
 		m_p_list = reinterpret_cast<RegionP<T>*>(realloc( m_p_list, m_p_list_capacity * sizeof( RegionP<T> ) ));
 		memmove( m_p_list + m_p_list_spaceLeft - prev_byStart_left, m_p_list, prev_capacity * sizeof( RegionP<T> ) );
+		memset( m_p_list, 0, m_p_list_spaceLeft * sizeof( RegionP<T> ) );
+		memset( m_p_list + m_p_list_spaceLeft + m_p_list_size, 0, m_p_list_spaceRight * sizeof( RegionP<T> ) );
 
 		m_p_list_begin = m_p_list + m_p_list_spaceLeft;
 		m_p_list_end = m_p_list_begin + m_p_list_size;
@@ -595,6 +597,8 @@ void RegionsList<T>::ExpandList()
 
 		m_s_list = reinterpret_cast<RegionS<T>*>(realloc( m_s_list, m_s_list_capacity * sizeof( RegionS<T> ) ));
 		memmove( m_s_list + m_s_list_spaceLeft - prev_bySize_left, m_s_list, prev_capacity * sizeof( RegionS<T> ) );
+		memset( m_s_list, 0, m_s_list_spaceLeft * sizeof( RegionS<T> ) );
+		memset( m_s_list + m_s_list_spaceLeft + m_s_list_size, 0, m_s_list_spaceRight * sizeof( RegionS<T> ) );
 
 		m_s_list_begin = m_s_list + m_s_list_spaceLeft;
 		m_s_list_end = m_s_list_begin + m_s_list_size;

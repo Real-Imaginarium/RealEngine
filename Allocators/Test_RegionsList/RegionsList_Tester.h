@@ -112,6 +112,8 @@ public:
 	static void CheckIfContentOutOfBounds( const std::vector<ListType>& content, size_t addr_start, size_t addr_stop, Error_BasePtr& err );
 
 	static void CheckListsCompliance( const std::vector<Region_P>& p_vec, const std::vector<Region_S>& s_vec, Error_BasePtr& err );
+
+	static void CheckMarginsPurity( std::shared_ptr<RegionsList<CELL>> regList, Error_BasePtr& err );
 };
 
 
