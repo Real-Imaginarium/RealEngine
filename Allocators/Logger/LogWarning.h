@@ -15,4 +15,3 @@ public:
         //return std::string( "[ WARN  ][id: " + sstr.str() + "] " );
     }
 };
-

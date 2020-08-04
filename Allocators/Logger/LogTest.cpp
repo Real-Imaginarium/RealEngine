@@ -99,7 +99,7 @@ void LogTest::operator<<( const endlog& end )
 {
     if (m_outputFile.is_open()) {
         if (!m_header_sended)
-            m_outputFile << Header();// << " " << "********** " << m_testName << " **********";
+            m_outputFile << Header();
         m_outputFile << std::endl;
         m_outputFile.close();
     }
@@ -107,7 +107,7 @@ void LogTest::operator<<( const endlog& end )
     m_outputToFile = false;
     
     if (!m_header_sended) {
-        std::cout << Header();// << " ********** " << m_testName << " **********";
+        std::cout << Header();
     }
     m_header_sended = false;
     std::cout << std::endl;

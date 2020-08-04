@@ -57,4 +57,3 @@ private:
     size_t m_casesPassed;
     size_t m_casesNumber;
 };
-

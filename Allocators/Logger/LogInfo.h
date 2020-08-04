@@ -15,4 +15,3 @@ public:
         //return std::string( "[ INFO  ][id: " + sstr.str() + "] " );
     }
 };
-

@@ -15,4 +15,3 @@ public:
         //return std::string( "[ ERROR ][id: " + sstr.str() + "] " );
     }
 };
-

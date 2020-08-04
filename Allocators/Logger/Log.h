@@ -166,4 +166,3 @@ protected:
 
     LOGGER_API std::vector<std::string> SplitString( const std::string& s, char delimiter );
 };
-
