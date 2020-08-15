@@ -19,7 +19,7 @@ class RegionsList
 public:
     friend class rl_manip;
 
-    RegionsList( size_t capacity );
+    RegionsList( size_t capacity = g_minimum_capacity );
 
     ~RegionsList();
 

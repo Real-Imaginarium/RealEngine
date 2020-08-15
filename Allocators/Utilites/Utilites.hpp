@@ -120,7 +120,7 @@ template<template<class> class REG_T, class CELL_T, class REG = REG_T<CELL_T>>
 inline std::vector<REG> RegionVector_from_String( const std::string& str, Error_BasePtr& err );    /*  —троит vector<RegionP> или vector<RegionS> по строке с набором "[d+;d+]" или "[d+;d+;d+]" */
 
 template<class T>
-inline void SListFromPList( const std::vector<RegionP<T>> &in, std::vector<RegionS<T>>& out );     /*  —троит S-List на основе P-List (пересортировкой сначала по size, затем по start)  */
+inline std::vector<RegionS<T>> SListFromPList( const std::vector<RegionP<T>> &in );     /*  —троит S-List на основе P-List (пересортировкой сначала по size, затем по start)  */
 
 template<class T>
 inline bool CheckAdj( const RegionP<T>& left, const RegionP<T>& right );                           /*  ѕровер€ет, смежны ли регионы в RegionP */
@@ -479,9 +479,9 @@ namespace utils
 
     /*  —троит S-List на основе P-List (пересортировкой сначала по size, затем по start)  */
     template<class T>
-    void SListFromPList( const std::vector<RegionP<T>>& in, std::vector<RegionS<T>>& out )
+    std::vector<RegionS<T>> SListFromPList( const std::vector<RegionP<T>>& in )
     {
-        out.clear();
+        std::vector<RegionS<T>> ret;
         size_t max_size = 0;
         for (const auto& in_reg : in)
         {
@@ -504,10 +504,11 @@ namespace utils
             for (const auto& p_reg : p_vec)
             {
                 RegionS<T> reg = { p_reg.start, p_reg.size, p_vec.size() * count_enable };
-                out.push_back( reg );
+                ret.push_back( reg );
                 count_enable = 0;
             }
         }
+        return ret;
     }
 
 

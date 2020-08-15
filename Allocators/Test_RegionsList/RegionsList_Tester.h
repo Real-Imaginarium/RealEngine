@@ -11,6 +11,7 @@ template<class T> class RegionsList;
 
 using Region_P = RegionP<CELL>;
 using Region_S = RegionS<CELL>;
+using RegionsListPtr = std::shared_ptr<RegionsList<CELL>>;
 
 struct TestData;
 
@@ -69,7 +70,7 @@ public:
     void Test_GrabbingsInsertionsRandom();
 
 private:
-    void GenerateInsertionsComplex( std::vector<std::string>& out_insertions_str );
+    void GenerateInsertionsComplex( std::vector<std::tuple<std::string, TestData>> *out_releases );
 
     void GenerateGrabsComplex( std::vector<TestData>& out_grabbs );
 };
@@ -79,26 +80,37 @@ class rl_manip
 {
 public:
     template<class ListType>
-    static void SetState( const ListState& state, std::shared_ptr<RegionsList<CELL>> regList, Error_BasePtr& err );
+    static void SetState( const ListState& state, RegionsListPtr regList, Error_BasePtr& err );
 
     template<class ListType>
-    static void SetContent( const std::vector<ListType>& content, std::shared_ptr<RegionsList<CELL>> regList, Error_BasePtr& err );
+    static void SetContent( const std::vector<ListType>& content, RegionsListPtr regList, Error_BasePtr& err );
 
     template<class ListType>
-    static ListState GetState( std::shared_ptr<RegionsList<CELL>> regList );
+    static ListState GetState( RegionsListPtr regList );
 
     template<class ListType>
-    static ListFootprints GetFootprints( std::shared_ptr<RegionsList<CELL>> regList );
+    static ListFootprints GetFootprints( RegionsListPtr regList );
 
     template<class ListType>
-    static std::vector<ListType> GetContent( std::shared_ptr<RegionsList<CELL>> regList, Error_BasePtr& err );
+    static std::vector<ListType> GetContent( RegionsListPtr regList, Error_BasePtr& err );
+
+    static void GetRegionsListDetails( RegionsListPtr regList, TestData& td, Error_BasePtr& err, bool to_resulted = true );
+
+    static void SetupRegionsList( RegionsListPtr regList, const TestData& settings, Error_BasePtr& err, bool settings_from_initial = true );
 };
 
 
 class rl_check
 {
 public:
+    static void CheckMarginsPurity( RegionsListPtr regList, Error_BasePtr& err );
+
+    static void CheckListsCompliance( const std::vector<Region_P>& p_vec, const std::vector<Region_S>& s_vec, Error_BasePtr& err );
+
     static ListState Validate_ListState( const ListState& state, Error_BasePtr& err );
+
+    template<class ListType>
+    static void CheckFootprintsVsState( const ListState& state, const ListFootprints& footpr, Error_BasePtr& err );
 
     static bool CheckState( const ListState& expected, const ListState& gained, Error_BasePtr& err );
 
@@ -106,23 +118,16 @@ public:
     static bool CheckContent( const std::vector<ListType>& expected, std::vector<ListType>& gained, Error_BasePtr& err );
 
     template<class ListType>
-    static void CheckFootprintsVsState( const ListState& state, const ListFootprints& footpr, Error_BasePtr& err );
+    static void CheckIfContentOutOfBounds( const std::vector<ListType>& content, Region_P bounds, Error_BasePtr& err );
 
-    template<class ListType>
-    static void CheckIfContentOutOfBounds( const std::vector<ListType>& content, size_t addr_start, size_t addr_stop, Error_BasePtr& err );
+    static void CheckRegionsList( RegionsListPtr regList, const TestData& expected, Error_BasePtr &err, bool check_state = true, bool check_content = true, bool check_bounds = true, bool check_resulted = true );
 
-    static void CheckListsCompliance( const std::vector<Region_P>& p_vec, const std::vector<Region_S>& s_vec, Error_BasePtr& err );
+    static TestData CheckRegionsListInitialization( RegionsListPtr checkedRegList, size_t init_capacity, const Region_P& init_region, const Region_P& bounds, Error_BasePtr& err );
 
-    static void CheckMarginsPurity( std::shared_ptr<RegionsList<CELL>> regList, Error_BasePtr& err );
 };
 
+static void log_transactions( std::list<std::pair<std::vector<TestData>, std::vector<TestData>>> t_list, Log* l );
 
-static TestData ParseInsertionComplex( const std::string& test_case, Error_BasePtr& err );
-
-static ListState ParseListState( const std::string& list_state, Error_BasePtr& err );
-
-
-/* Заполняется парсером при обработке текста с набором тестов из "insertions_complex.txt" */
 struct TestData
 {
     /* Исходные и результирующие состояния P- и S-List */
@@ -137,14 +142,34 @@ struct TestData
     std::vector<Region_P> p_listContent_resulted;
     std::vector<Region_S> s_listContent_resulted;
 
-    Region_P intermediate_reg;      // Используется при тесте и вставок и удалений
+    Region_P intermediate_reg;      // Интерпретируется по-разному
 
-    std::string to_String() const {
+    void Swap_Initial_and_Resulted()
+    {
+        ListState p_listState_temp = p_listState_initial;
+        ListState s_listState_temp = s_listState_initial;
+        auto p_listContent_temp = p_listContent_initial;
+        auto s_listContent_temp = s_listContent_initial;
+        p_listState_initial = p_listState_resulted;
+        s_listState_initial = s_listState_resulted;
+        p_listContent_initial = p_listContent_resulted;
+        s_listContent_initial = s_listContent_resulted;
+        p_listState_resulted = p_listState_temp;
+        s_listState_resulted = s_listState_temp;
+        p_listContent_resulted = p_listContent_temp;
+        s_listContent_resulted = s_listContent_temp;
+    }
+
+    std::string to_String(uint8_t tab = 0) const {
         return
-            "P-State initial:  " + utils::to_string( p_listState_initial ) + "\nP-State resulted: " + utils::to_string( p_listState_resulted ) +
-            "\nS-State initial:  " + utils::to_string( s_listState_initial ) + "\nS-State resulted: " + utils::to_string( s_listState_resulted ) +
-            "\nP-Content initial:  " + utils::to_string( p_listContent_initial ) + "\nP-Content resulted: " + utils::to_string( p_listContent_resulted ) +
-            "\nS-Content initial:  " + utils::to_string( s_listContent_initial ) + "\nS-Content resulted: " + utils::to_string( s_listContent_resulted ) +
-            "\nIntermediate RegionP: " + utils::to_string( intermediate_reg );
+            std::string( tab, ' ' ) + "Intermediate  reg: " + utils::to_string( intermediate_reg ) + "\n" +
+            std::string( tab, ' ' ) + "P-State   Initial: " + utils::to_string( p_listState_initial ) + "\n" +
+            std::string( tab, ' ' ) + "         Resulted: " + utils::to_string( p_listState_resulted ) + "\n" +
+            std::string( tab, ' ' ) + "S-State   Initial: " + utils::to_string( s_listState_initial ) + "\n" +
+            std::string( tab, ' ' ) + "         Resulted: " + utils::to_string( s_listState_resulted ) + "\n" +
+            std::string( tab, ' ' ) + "P-Content Initial: " + utils::to_string( p_listContent_initial ) + "\n" +
+            std::string( tab, ' ' ) + "         Resulted: " + utils::to_string( p_listContent_resulted ) + "\n" +
+            std::string( tab, ' ' ) + "S-Content Initial: " + utils::to_string( s_listContent_initial ) + "\n" +
+            std::string( tab, ' ' ) + "         Resulted: " + utils::to_string( s_listContent_resulted );
     }
 };

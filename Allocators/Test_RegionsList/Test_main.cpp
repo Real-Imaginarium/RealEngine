@@ -97,10 +97,10 @@ int main(int argc, const char** argv)
             tester->Test_GrabbingFromSingleSizedList();
         }
         if (GrabingsComplex || AllTests) {
-            tester->Test_GrabbingsComplex();
+            //tester->Test_GrabbingsComplex();
         }
         if (InsertionsComplex || AllTests) {
-            tester->Test_InsertionsComplex();
+            //tester->Test_InsertionsComplex();
         }
         if (GrabbingsInsertionsRandom || AllTests) {
             tester->Test_GrabbingsInsertionsRandom();
