@@ -5,10 +5,10 @@
 
 
 Error_Param::Error_Param(
-    int arg_number, std::string arg_name, std::string expected, std::string gained, const char* file_name, const char* func_name, int line, const char* logFile_name )
-    : Error_Base( file_name, func_name, line, logFile_name )
+    int arg_number, std::string arg_pos, std::string expected, std::string gained, const char* file, const char* func, int line, const char* logFile )
+    : Error_Base( file, func, line, logFile )
     , m_arg_number( arg_number )
-    , m_arg_name( arg_name )
+    , m_arg_name( arg_pos )
     , m_expected( expected )
     , m_gained( gained )
 {

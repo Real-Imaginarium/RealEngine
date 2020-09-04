@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Error_RegionsList.h"
+#include "Error_Custom.h"
 #include "LogInfo.h"
 #include "Types.h"
 
@@ -9,7 +10,7 @@
 
 #include "Utilites.hpp"
 
-static const uint8_t g_minimum_capacity = 3; // Не трогать
+static const uint8_t g_minimum_capacity = 3;    // Не трогать
 
 class rl_manip;
 
@@ -20,6 +21,8 @@ public:
     friend class rl_manip;
 
     RegionsList( size_t capacity = g_minimum_capacity );
+
+    RegionsList( size_t capacity, RegionP<T> managed_reg );
 
     ~RegionsList();
 
@@ -44,15 +47,20 @@ private:
     RegionS<T> *m_s_list_end;
 
     template<class ListType>
-    void ExpandList();
+    Error_BasePtr ExpandList();
 
     template<class ListType>
-    void DelFrom_List( size_t index );                              // Удаляет по индексу элемент из S- или P-List, в котором индекс первого элемента = 0
+    void DelFrom_List( size_t index );                                      // Удаляет по индексу элемент из S- или P-List, в котором индекс первого элемента = 0
 
-    void InserTo_S_List( const RegionS<T>& ins, size_t index );     // Добавляет по индексу элемент в S-List, в котором индекс первого элемента = 0
+    Error_BasePtr InserTo_S_List( const RegionS<T>& ins, size_t index );    // Добавляет по индексу элемент в S-List, в котором индекс первого элемента = 0
 };
 
 
+template<class T>
+RegionsList<T>::RegionsList( size_t capacity, RegionP<T> managed_reg ) : RegionsList( capacity )
+{
+    Error_BasePtr err = ReleaseRegion( managed_reg );                                                   TRACE_CUSTOM_THR_ERR( err, "RegionsList error during initial Release()" );
+}
 
 
 template<class T>
@@ -65,7 +73,7 @@ RegionsList<T>::RegionsList( size_t capacity )
     , m_p_list_begin( nullptr )
     , m_p_list_end( nullptr )
     , m_s_list_size( 0 )
-    , m_s_list_capacity( 0 )
+    , m_s_list_capacity( capacity )
     , m_s_list_spaceLeft( 0 )
     , m_s_list_spaceRight( 0 )
     , m_s_list( nullptr )
@@ -73,15 +81,12 @@ RegionsList<T>::RegionsList( size_t capacity )
     , m_s_list_end( nullptr )
 {
     // Выделяем память для списков фрагментов. Минимум - для четырёх. Инициализируем
-    if (m_p_list_capacity < g_minimum_capacity) {
-        m_p_list_capacity = g_minimum_capacity;
+    if (capacity < g_minimum_capacity) {
+        m_p_list_capacity = m_s_list_capacity = g_minimum_capacity;
     }
-    m_s_list_capacity = m_p_list_capacity;
-
-    m_p_list = reinterpret_cast<RegionP<T>*>(calloc( m_p_list_capacity, sizeof( RegionP<T> ) ));
-    m_s_list = reinterpret_cast<RegionS<T>*>(calloc( m_s_list_capacity, sizeof( RegionS<T> ) ));
-    memset( (void*)m_p_list, 0, m_p_list_capacity * sizeof( RegionP<T> ) );
-    memset( (void*)m_s_list, 0, m_s_list_capacity * sizeof( RegionS<T> ) );
+    Error_BasePtr err = nullptr;
+    err = utils::Attempt_calloc<RegionP<T>>( 20, 100, m_p_list_capacity, m_p_list );                    TRACE_REGIONSLIST_THR_ERR( err, ERL_Type::P_LIST_ALLOCATION );
+    err = utils::Attempt_calloc<RegionS<T>>( 20, 100, m_s_list_capacity, m_s_list );                    TRACE_REGIONSLIST_THR_ERR( err, ERL_Type::S_LIST_ALLOCATION );
 
     // Инициализируем ширину левого/правого поля в списках
     m_p_list_spaceLeft = m_p_list_capacity / 2;
@@ -100,12 +105,8 @@ RegionsList<T>::RegionsList( size_t capacity )
 template<class T>
 RegionsList<T>::~RegionsList()
 {
-    if (m_p_list) {
-        free( m_p_list );
-    }
-    if (m_s_list) {
-        free( m_s_list );
-    }
+    if (m_p_list) { free( m_p_list ); }
+    if (m_s_list) { free( m_s_list ); }
 }
 
 
@@ -130,14 +131,14 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
     {                                           // Работаем с Pointers-списком
         // Если такой регион уже есть в списке - возвращаем ошибку
         if (region.start == m_p_list_begin->start) {
-            return std::make_shared<Error_RegionsList>( RegList_ErrType::ERR_EXISTING_REG_INSERTION, (size_t)region.start, region.size, PLACE(), "Log.txt" );
+            return ERR_REGIONSLIST( ERL_Type::EXISTING_REG_INSERTION, region.start, region.size );
         }
         // Если попадаем правее (в конец)
         if (region.start > m_p_list_begin->start)
         {
             // Если регион перекрывается с левым - ошибка
             if (m_p_list_begin->start + m_p_list_begin->size > region.start) {
-                return std::make_shared<Error_RegionsList>( RegList_ErrType::ERR_OVERLAPPED_REG_INSERTION, (size_t)region.start, region.size, PLACE(), "Log.txt" );
+                return ERR_REGIONSLIST( ERL_Type::OVERLAPPED_REG_INSERTION, region.start, region.size );
             }
             // Смежен ли левый сосед? Если да - фрагмент не добавляется, а модифицируется имеющийся (в обоих списках).
             if ((m_p_list_begin->start + m_p_list_begin->size) == region.start) {
@@ -147,7 +148,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
             }
             // Добавляем новый регион правее. Место справа уменьшается, конец списка сдвигается вправо.
             if (!m_p_list_spaceRight) {
-                ExpandList<RegionP<T>>();
+                auto err = ExpandList<RegionP<T>>();                                    TRACE_CUSTOM_RET_ERR( err, "Can't expand P-List to Right (contains 1 element)." );
             }
             *m_p_list_end++ = region;
             ++m_p_list_size;
@@ -158,7 +159,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
         {
             // Если регион перекрывается с правым - ошибка
             if (region.start + region.size > m_p_list_begin->start) {
-                return std::make_shared<Error_RegionsList>( RegList_ErrType::ERR_OVERLAPPED_REG_INSERTION, (size_t)region.start, region.size, PLACE(), "Log.txt" );
+                return ERR_REGIONSLIST( ERL_Type::OVERLAPPED_REG_INSERTION, region.start, region.size );
             }
             // Смежен ли правый сосед? Если да - фрагмент не добавляется, а модифицируется имеющийся (в обоих списках).
             if (m_p_list_begin->start == region.start + region.size) {
@@ -169,7 +170,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
             }
             // Добавляем новый регион левее. Место слева уменьшается, начало списка сдвигается влево.
             if (!m_p_list_spaceLeft) {
-                ExpandList<RegionP<T>>();
+                auto err = ExpandList<RegionP<T>>();                                    TRACE_CUSTOM_RET_ERR( err, "Can't expand P-List to Left (contains 1 element)." );
             }
             *(--m_p_list_begin) = region;
             ++m_p_list_size;
@@ -179,7 +180,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
         // Если попадаем правее
         if (region.size > m_s_list_begin->size) {
             if (!m_s_list_spaceRight) {
-                ExpandList<RegionS<T>>();
+                auto err = ExpandList<RegionS<T>>();                                    TRACE_CUSTOM_RET_ERR( err, "Can't expand S-List to Right (contains 1 element, insertion sort by size)." );
             }
             *m_s_list_end++ = { region.start, region.size, 1 };
             --m_s_list_spaceRight;
@@ -187,7 +188,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
         // Если попадаем левее
         else if (region.size < m_s_list_begin->size) {
             if (!m_s_list_spaceLeft) {
-                ExpandList<RegionS<T>>();
+                auto err = ExpandList<RegionS<T>>();                                    TRACE_CUSTOM_RET_ERR( err, "Can't expand S-List to Left (contains 1 element, insertion sort by size)." );
             }
             *(--m_s_list_begin) = { region.start, region.size, 1 };
             --m_s_list_spaceLeft;
@@ -196,7 +197,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
         else {
             if (region.start > m_s_list_begin->start) {
                 if (!m_s_list_spaceRight) {
-                    ExpandList<RegionS<T>>();
+                    auto err = ExpandList<RegionS<T>>();                                TRACE_CUSTOM_RET_ERR( err, "Can't expand S-List to Right (contains 1 element, insertion sort by pointer)." );
                 }
                 m_s_list_begin->count = 2;
                 *m_s_list_end++ = { region.start, region.size, 0 };
@@ -204,7 +205,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
             }
             else {
                 if (!m_s_list_spaceLeft) {
-                    ExpandList<RegionS<T>>();
+                    auto err = ExpandList<RegionS<T>>();                                TRACE_CUSTOM_RET_ERR( err, "Can't expand S-List to Left (contains 1 element, insertion sort by pointer)." );
                 }
                 m_s_list_begin->count = 0;
                 *(--m_s_list_begin) = { region.start, region.size, 2 };
@@ -225,7 +226,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
 
         // Если такой регион уже есть в списке - возвращаем ошибку
         if (founded) {
-            return std::make_shared<Error_RegionsList>( RegList_ErrType::ERR_EXISTING_REG_INSERTION, (size_t)region.start, region.size, PLACE(), "Log.txt" );
+            return ERR_REGIONSLIST( ERL_Type::EXISTING_REG_INSERTION, region.start, region.size );
         }
 
         // Если вставка в начало
@@ -233,7 +234,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
         {
             // Если регион перекрывается с правым - ошибка
             if (region.start + region.size > m_p_list_begin->start) {
-                return std::make_shared<Error_RegionsList>( RegList_ErrType::ERR_OVERLAPPED_REG_INSERTION, (size_t)region.start, region.size, PLACE(), "Log.txt" );
+                return ERR_REGIONSLIST( ERL_Type::OVERLAPPED_REG_INSERTION, region.start, region.size );
             }
             // Смежен ли правый сосед?
             if (region.start + region.size == m_p_list_begin->start) {
@@ -246,7 +247,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
             else {
                 // Места слева не хватает?
                 if (!m_p_list_spaceLeft) {
-                    ExpandList<RegionP<T>>();
+                    auto err = ExpandList<RegionP<T>>();                                TRACE_CUSTOM_RET_ERR( err, "Can't expand P-List to Left (contains more than 1 element, insertion at the beginning)." );
                 }
                 *(--m_p_list_begin) = region;
                 --m_p_list_spaceLeft;
@@ -261,7 +262,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
 
             // Если регион перекрывается с левым - ошибка
             if (lastReg->start + lastReg->size > region.start) {
-                return std::make_shared<Error_RegionsList>( RegList_ErrType::ERR_OVERLAPPED_REG_INSERTION, (size_t)region.start, region.size, PLACE(), "Log.txt" );
+                return ERR_REGIONSLIST( ERL_Type::OVERLAPPED_REG_INSERTION, region.start, region.size );
             }
             // Смежен ли левый сосед?
             if ((lastReg->start + lastReg->size) == region.start)
@@ -275,7 +276,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
             {
                 // Места справа не хватает для вставки 1 элемента?
                 if (!m_p_list_spaceRight) {
-                    ExpandList<RegionP<T>>();
+                    auto err = ExpandList<RegionP<T>>();                                TRACE_CUSTOM_RET_ERR( err, "Can't expand P-List to Right (contains more than 1 element, insertion at the end)." );
                 }
                 *m_p_list_end++ = region;
                 --m_p_list_spaceRight;
@@ -290,7 +291,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
 
             // Если регион перекрывается с левым или правым - ошибка
             if (((left->start + left->size) > region.start) || ((region.start + region.size) > right->start)) {
-                return std::make_shared<Error_RegionsList>( RegList_ErrType::ERR_OVERLAPPED_REG_INSERTION, (size_t)region.start, region.size, PLACE(), "Log.txt" );
+                return ERR_REGIONSLIST( ERL_Type::OVERLAPPED_REG_INSERTION, region.start, region.size );
             }
 
             // Если левый и правый соседи - смежные
@@ -345,7 +346,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
                 {
                     // Места справа не хватает для вставки 1 элемента?
                     if (m_p_list_spaceRight == 0) {
-                        ExpandList<RegionP<T>>();
+                        auto err = ExpandList<RegionP<T>>();                            TRACE_CUSTOM_RET_ERR( err, "Can't expand P-List to Right (contains more than 1 element, middle insertion closer to end)." );
                         right = m_p_list_begin + index;     // right после реаллокации списка невалиден. Переопределяем его.
                     }
                     memmove( right + 1, right, (m_p_list_size - index) * sizeof( RegionP<T> ) );        // Сдвигаем эл-ты, начиная с Правый+1 на 1 поз. вправо (освобождаем место для вставки)
@@ -358,7 +359,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
                 else {
                     // Места слева не хватает для вставки 1 элемента?
                     if (m_p_list_spaceLeft == 0) {
-                        ExpandList<RegionP<T>>();
+                        auto err = ExpandList<RegionP<T>>();                            TRACE_CUSTOM_RET_ERR( err, "Can't expand P-List to Left (contains more than 1 element, middle insertion closer to begin)." );
                         right = m_p_list_begin + index;     // right и left после реаллокации списка невалидны. Переопределяем их.
                         left = right - 1;
                     }
@@ -431,7 +432,8 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
         else {
             regToInsert.count = 1;
         }
-        InserTo_S_List( regToInsert, index );
+        auto err = InserTo_S_List( regToInsert, index );
+        TRACE_CUSTOM_RET_ERR( err, "Can't insert the element in S-List\nElement: " + utils::to_string( regToInsert ) + "\nInsertion index: " + std::to_string( index ) );
     }
     return nullptr;
 }
@@ -442,14 +444,17 @@ Error_BasePtr RegionsList<T>::GrabRegion( size_t size, T **out )
 {
     // Если S-List пустой - ошибка
     if (!m_s_list_size) {
-        return std::make_shared<Error_RegionsList>( RegList_ErrType::ERR_GRAB_FROM_EMPTY_LIST, PLACE(), "Log.txt" );
+        return ERR_REGIONSLIST( ERL_Type::GRAB_FROM_EMPTY_LIST );
+    }
+    if( !size ) {
+        return ERR_PARAM( 1, "size_t size", "Non zero", "0" );
     }
     // Если в списках 1 регион
     else if (m_s_list_size == 1)
     {
         // Если ширина запрашиваемого региона больше той, что есь - ошибка
         if (m_s_list_begin->size < size) {
-            return std::make_shared<Error_RegionsList>( RegList_ErrType::ERR_CONSISTENT_REG_NOTFOUND, size, PLACE(), "Log.txt" );
+            return ERR_REGIONSLIST( ERL_Type::CONSISTENT_REG_NOTFOUND, size );
         }
         // Если ширина запрашиваемого региона меньше той, что есть - модифицируем регионы в P- и S-List
         if (m_s_list_begin->size > size) {
@@ -484,7 +489,7 @@ Error_BasePtr RegionsList<T>::GrabRegion( size_t size, T **out )
 
         // Если подходящий регион не найден - ошибка
         if (index == m_s_list_size)	{
-            return std::make_shared<Error_RegionsList>( RegList_ErrType::ERR_CONSISTENT_REG_NOTFOUND, PLACE(), "Log.txt" );
+            return ERR_REGIONSLIST( ERL_Type::CONSISTENT_REG_NOTFOUND, size );
         }
                                                                     /* Работаем с S-List */
         RegionS<T> foundedRegion = *(m_s_list_begin + index);
@@ -541,7 +546,8 @@ Error_BasePtr RegionsList<T>::GrabRegion( size_t size, T **out )
             } else {
                 toInsert_in_SList.count = 1;
             }
-            InserTo_S_List( toInsert_in_SList, index );
+            auto err = InserTo_S_List( toInsert_in_SList, index );
+            TRACE_CUSTOM_RET_ERR( err, "Can't insert the element in S-List\nElement: " + utils::to_string( toInsert_in_SList ) + "\nInsertion index: " + std::to_string( index ) );
         }
                                                                     /* Работаем с P-List */
         bool founded;
@@ -549,7 +555,7 @@ Error_BasePtr RegionsList<T>::GrabRegion( size_t size, T **out )
 
         // Если элемент с таким .start в P-List не найден - ошибка
         if (!founded) {
-            return std::make_shared<Error_RegionsList>( RegList_ErrType::ERR_REG_WITH_SUCH_START_NOTFOUND, (size_t)toDel_or_Modify, 0, PLACE(), "Log.txt" );
+            return ERR_REGIONSLIST( ERL_Type::REG_WITH_SUCH_START_NOTFOUND, toDel_or_Modify );
         }
         // Найденный регион в P-List модифицируется?
         if (mode) {
@@ -565,7 +571,7 @@ Error_BasePtr RegionsList<T>::GrabRegion( size_t size, T **out )
 
 template<class T>
 template<class ListType>
-void RegionsList<T>::ExpandList()
+Error_BasePtr RegionsList<T>::ExpandList()
 {
     if constexpr (std::is_same_v<ListType, RegionP<T>>)
     {
@@ -577,13 +583,15 @@ void RegionsList<T>::ExpandList()
         m_p_list_spaceLeft = (m_p_list_spaceLeft + m_p_list_spaceRight + N) / 2;
         m_p_list_spaceRight = m_p_list_capacity - m_p_list_spaceLeft - m_p_list_size;
 
-        m_p_list = reinterpret_cast<RegionP<T>*>(realloc( m_p_list, m_p_list_capacity * sizeof( RegionP<T> ) ));
+        auto err = utils::Attempt_realloc<ListType>( 20, 100, m_p_list_capacity * sizeof( ListType ), m_p_list );                   TRACE_REGIONSLIST_RET_ERR( err, ERL_Type::P_LIST_ALLOCATION );
+
         memmove( m_p_list + m_p_list_spaceLeft - prev_byStart_left, m_p_list, prev_capacity * sizeof( RegionP<T> ) );
         memset( m_p_list, 0, m_p_list_spaceLeft * sizeof( RegionP<T> ) );
         memset( m_p_list + m_p_list_spaceLeft + m_p_list_size, 0, m_p_list_spaceRight * sizeof( RegionP<T> ) );
 
         m_p_list_begin = m_p_list + m_p_list_spaceLeft;
         m_p_list_end = m_p_list_begin + m_p_list_size;
+        return nullptr;
     }
     else if constexpr (std::is_same_v<ListType, RegionS<T>>)
     {
@@ -595,16 +603,18 @@ void RegionsList<T>::ExpandList()
         m_s_list_spaceLeft = (m_s_list_spaceLeft + m_s_list_spaceRight + N) / 2;
         m_s_list_spaceRight = m_s_list_capacity - m_s_list_spaceLeft - m_s_list_size;
 
-        m_s_list = reinterpret_cast<RegionS<T>*>(realloc( m_s_list, m_s_list_capacity * sizeof( RegionS<T> ) ));
+        auto err = utils::Attempt_realloc<ListType>( 20, 100, m_s_list_capacity * sizeof( ListType ), m_s_list );                   TRACE_REGIONSLIST_RET_ERR( err, ERL_Type::S_LIST_ALLOCATION );
+
         memmove( m_s_list + m_s_list_spaceLeft - prev_bySize_left, m_s_list, prev_capacity * sizeof( RegionS<T> ) );
         memset( m_s_list, 0, m_s_list_spaceLeft * sizeof( RegionS<T> ) );
         memset( m_s_list + m_s_list_spaceLeft + m_s_list_size, 0, m_s_list_spaceRight * sizeof( RegionS<T> ) );
 
         m_s_list_begin = m_s_list + m_s_list_spaceLeft;
         m_s_list_end = m_s_list_begin + m_s_list_size;
+        return nullptr;
     }
     else {
-        return;
+        return nullptr;
     }
 }
 
@@ -672,12 +682,12 @@ void RegionsList<T>::DelFrom_List( size_t index )
 
 
 template<class T>
-void RegionsList<T>::InserTo_S_List( const RegionS<T>& ins, size_t index )
+Error_BasePtr RegionsList<T>::InserTo_S_List( const RegionS<T>& ins, size_t index )
 {
     // Вставка в начало?
     if (index == 0) {
         if (!m_s_list_spaceLeft) {
-            ExpandList<RegionS<T>>();
+            auto err = ExpandList<RegionS<T>>();                                        TRACE_CUSTOM_RET_ERR( err, "Can't expand S-List to Left (insertion at the beginning)." );
         }
         *(--m_s_list_begin) = ins;
         --m_s_list_spaceLeft;
@@ -685,7 +695,7 @@ void RegionsList<T>::InserTo_S_List( const RegionS<T>& ins, size_t index )
     // Вставка в конец?
     else if (index == m_s_list_size) {
         if (!m_s_list_spaceRight) {
-            ExpandList<RegionS<T>>();
+            auto err = ExpandList<RegionS<T>>();                                        TRACE_CUSTOM_RET_ERR( err, "Can't expand S-List to Right (insertion at the end)." );
         }
         *m_s_list_end++ = ins;
         --m_s_list_spaceRight;
@@ -693,7 +703,7 @@ void RegionsList<T>::InserTo_S_List( const RegionS<T>& ins, size_t index )
     // Вставка ближе к концу?
     else if (index >= m_s_list_size / 2) {
         if (!m_s_list_spaceRight) {
-            ExpandList<RegionS<T>>();
+            auto err = ExpandList<RegionS<T>>();                                        TRACE_CUSTOM_RET_ERR( err, "Can't expand S-List to Right (middle insertion, closer to end)." );
         }
         memmove( m_s_list_begin + index + 1, m_s_list_begin + index, (m_s_list_size - index) * sizeof( RegionS<T> ) );
         *(m_s_list_begin + index) = ins;
@@ -703,7 +713,7 @@ void RegionsList<T>::InserTo_S_List( const RegionS<T>& ins, size_t index )
     // Вставка ближе к началу?
     else {
         if (!m_s_list_spaceLeft) {
-            ExpandList<RegionS<T>>();
+            auto err = ExpandList<RegionS<T>>();                                        TRACE_CUSTOM_RET_ERR( err, "Can't expand S-List to Left (middle insertion, closer to beginning)." );
         }
         memmove( m_s_list_begin - 1, m_s_list_begin, index * sizeof( RegionS<T> ) );
         --m_s_list_begin;
@@ -711,4 +721,5 @@ void RegionsList<T>::InserTo_S_List( const RegionS<T>& ins, size_t index )
         --m_s_list_spaceLeft;
     }
     ++m_s_list_size;
+    return nullptr;
 }

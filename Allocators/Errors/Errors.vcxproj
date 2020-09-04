@@ -206,19 +206,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Error_Base.h" />
-    <ClInclude Include="Error_Consiquent.h" />
     <ClInclude Include="Error_Custom.h" />
+    <ClInclude Include="Error_MemAlloc.h" />
     <ClInclude Include="Error_Param.h" />
     <ClInclude Include="Error_RegionsList.h" />
-    <ClInclude Include="Error_SearchByRegex.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Error_Base.cpp" />
-    <ClCompile Include="Error_Consiquent.cpp" />
     <ClCompile Include="Error_Custom.cpp" />
+    <ClCompile Include="Error_MemAlloc.cpp" />
     <ClCompile Include="Error_Param.cpp" />
     <ClCompile Include="Error_RegionsList.cpp" />
-    <ClCompile Include="Error_SearchByRegex.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

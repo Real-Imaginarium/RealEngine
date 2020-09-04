@@ -15,18 +15,20 @@
 
 
 class Error_Base;
-typedef std::shared_ptr<Error_Base> Error_BasePtr;
-typedef std::list<Error_BasePtr> ErrorList;
+using Error_BasePtr = std::shared_ptr<Error_Base>;
+using ErrorList = std::list<Error_BasePtr>;
 
 
 class Error_Base
 {
 public:
-    ERRORS_API static bool Trace( Error_BasePtr err, const std::string& desc = "", const char* file_name = nullptr, const char* func_name = nullptr, int line = -1 );
+    ERRORS_API static bool Trace( Error_BasePtr err, Error_BasePtr consiquent_err );
 
-    ERRORS_API Error_Base( const char* file_name, const char* func_name, int line, const char* logFile_name = "ErrorLog.txt" );
+    ERRORS_API Error_Base( const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
 
     ERRORS_API virtual void Print();
+
+    ERRORS_API static const char *g_error_log_name;
 
 protected:
     virtual ~Error_Base();
@@ -48,3 +50,10 @@ private:
 
     ErrorList m_consequent_errors;
 };
+
+
+template<class CAST>
+std::shared_ptr<CAST> ErrorCast( Error_BasePtr errToCast )
+{
+    return std::dynamic_pointer_cast<CAST, Error_Base>( errToCast );
+}

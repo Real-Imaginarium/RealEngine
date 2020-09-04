@@ -4,9 +4,13 @@
 #include <iostream>
 
 
-Error_Custom::Error_Custom( const std::string& desc, const char* file_name, const char* func_name, int line, const char* logFile_name )
-    : Error_Base( file_name, func_name, line, logFile_name )
+Error_Custom::Error_Custom( const std::string &desc, const char *file, const char *func, int line, const char *logFile )
+    : Error_Base( file, func, line, logFile )
     , m_description( desc )
+{
+}
+
+Error_Custom::~Error_Custom()
 {
 }
 

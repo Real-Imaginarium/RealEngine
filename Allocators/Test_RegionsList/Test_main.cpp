@@ -11,8 +11,6 @@
 
 int main(int argc, const char** argv)
 {
-    Error_BasePtr err = nullptr;
-    bool founded;
     std::string args_str;
     for (int i = 1; i < argc; ++i) {
         args_str += std::string( " " ) += std::string( argv[i] );
@@ -46,8 +44,12 @@ int main(int argc, const char** argv)
     bool InsertionsComplex = args_str.find( "--InsertionsComplex" ) != std::string::npos;
     bool GrabbingsInsertionsRandom = args_str.find( "--GrabbingsInsertionsRandom" ) != std::string::npos;
 
-    std::string iterations_str = utils::FindStrRegular( args_str, Regex( "[\\s]+--iterations[\\s=]+\\d+" ), founded, err );
-    iterations_str = utils::FindStrRegular( iterations_str, Regex( "\\d+" ), founded, err );
+    std::string iterations_str;
+    Error_BasePtr err = nullptr;
+    bool founded;
+    std::tie( err, iterations_str ) = utils::FindStrRegular( args_str, Regex( "[\\s]+--iterations[\\s=]+\\d+" ), founded );         TRACE_CUSTOM_PRNT_RET_VAL( err, -1, "Error in search \"--iterations\" arg" );
+    std::tie( err, iterations_str ) = utils::FindStrRegular( iterations_str, Regex( "\\d+" ), founded );                            TRACE_CUSTOM_PRNT_RET_VAL( err, -1, "Error in search \"--iterations\" arg" );
+
     int iterations = iterations_str.empty() ? 1 : std::stoi( iterations_str );
     iterations = iterations == 0 ? 1 : iterations;
 
@@ -97,13 +99,22 @@ int main(int argc, const char** argv)
             tester->Test_GrabbingFromSingleSizedList();
         }
         if (GrabingsComplex || AllTests) {
-            //tester->Test_GrabbingsComplex();
+            tester->Test_GrabbingsComplex();
         }
         if (InsertionsComplex || AllTests) {
-            //tester->Test_InsertionsComplex();
+            tester->Test_InsertionsComplex();
         }
         if (GrabbingsInsertionsRandom || AllTests) {
-            tester->Test_GrabbingsInsertionsRandom();
+                                                            /* Trans   MemSize  Min  Max     */
+            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     0,   0      } );
+            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     0,   1      } );
+            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     1,   1      } );
+            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     99,  100    } );
+            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     101, 101    } );
+            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     100, 101    } );
+            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     100, 100    } );
+            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     0,   100    } );
+            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 100000, 100000,  0,   120000 } );
         }
     }
     system( "Pause" );

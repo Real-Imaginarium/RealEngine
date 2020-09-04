@@ -1,5 +1,4 @@
 #include "Error_Base.h"
-#include "Error_Consiquent.h"
 #include "LogError.h"
 
 #include <vector>
@@ -7,7 +6,10 @@
 #include <sstream>
 
 
-Error_Base::Error_Base( const char* file_name, const char* func_name, int line, const char* logFile_name )
+const char *Error_Base::g_error_log_name = "Log.txt";
+
+
+Error_Base::Error_Base( const char *file_name, const char *func_name, int line, const char *logFile_name )
     : m_file( file_name )
     , m_function( func_name )
     , m_line( line )
@@ -61,13 +63,10 @@ Error_Base::~Error_Base()
 }
 
 
-bool Error_Base::Trace( Error_BasePtr err, const std::string& desc, const char* file_name, const char* func_name, int line )
+bool Error_Base::Trace( Error_BasePtr err, Error_BasePtr consiquent_err )
 {
     if (err) {
-        if (!desc.empty() && file_name && func_name && line != -1) {
-            Error_BasePtr error = std::make_shared<Error_Consiquent>( desc, file_name, func_name, line, "Log.txt" );
-            err->m_consequent_errors.push_back( error );
-        }
+        err->m_consequent_errors.push_back( consiquent_err );
         return true;
     }
     return false;

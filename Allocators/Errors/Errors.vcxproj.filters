@@ -18,27 +18,21 @@
     <ClInclude Include="Error_Base.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Error_Consiquent.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Error_Custom.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Error_Param.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Error_SearchByRegex.h">
+    <ClInclude Include="Error_RegionsList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Error_RegionsList.h">
+    <ClInclude Include="Error_MemAlloc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Error_Base.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Error_Consiquent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Error_Custom.cpp">
@@ -47,10 +41,10 @@
     <ClCompile Include="Error_Param.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Error_SearchByRegex.cpp">
+    <ClCompile Include="Error_RegionsList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Error_RegionsList.cpp">
+    <ClCompile Include="Error_MemAlloc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

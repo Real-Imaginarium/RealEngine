@@ -29,15 +29,17 @@ using FieldState =     Globals::Ins_complex::FieldState;
 
 using namespace std::filesystem;
 
+
 // Проверяет вставку уже существующего региона в RegionsList
 void RegionsList_Tester::Test_DoubleInserion()
 {
     Log::test( "Log.txt" ) << LogTest::Start{ "Test Existing Region Insertions", 1 };
-
     Error_BasePtr err = nullptr;
     size_t regList_initCap = 0;
     size_t pitch_size = 4000;
-    CELL* memoryPitch = new CELL[pitch_size];
+    CELL *memoryPitch = new CELL[pitch_size];
+    Region_P bounds = { memoryPitch, pitch_size };
+
     auto regList = std::make_shared<RegionsList<CELL>>( regList_initCap );
 
     // Тестовые вставки
@@ -46,27 +48,24 @@ void RegionsList_Tester::Test_DoubleInserion()
 
     do {
         // Проверяем RegionsList в процессе инициализации
-        rl_check::CheckRegionsListInitialization( regList, regList_initCap, initial_region, Region_P{ memoryPitch, pitch_size }, err );
-        TRACE_PRINT_CONTINUE( err, "RegionsList initialization error" );
+        std::tie( err, std::ignore ) = rl_check::Check_RegList_Init( regList, regList_initCap, initial_region, bounds );    TRACE_CUSTOM_PRNT_CNT( err, "RegionsList initialization error" );
 
         // Пытаемся заинсертить существующий регион, следим за ошибкой
-        auto errRegs = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->ReleaseRegion( initial_region ));
+        std::string err_mess = "Error isn't detected (Trying to insert existing region)";
+        auto errRegs = ErrorCast<Error_RegionsList>( regList->ReleaseRegion( initial_region ) );
 
-        if (!errRegs || errRegs->Type() != RegList_ErrType::ERR_EXISTING_REG_INSERTION) {
-            err = std::make_shared<Error_Custom>( "Error isn't detected (Trying to insert existing region)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "ReleaseRegion() Wrong behavior after initial insertion" );
+        if (!errRegs || errRegs->Type() != ERL_Type::EXISTING_REG_INSERTION) {
+            err = ERR_CUSTOM( err_mess );                                                                                   TRACE_CUSTOM_PRNT_CNT( err, "Wrong behaviour after initial insertion" );
         }
         // Делаем вторую вставку
-        err = regList->ReleaseRegion( second_region );                                  TRACE_PRINT_CONTINUE( err, "Error during RegionsList second insertion" );
+        err = regList->ReleaseRegion( second_region );                                                                      TRACE_CUSTOM_PRNT_CNT( err, "Error during RegionsList second insertion" );
 
         // Пытаемся заинсертить существующий регион, следим за ошибкой
-        errRegs = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->ReleaseRegion( second_region ));
+        errRegs = ErrorCast<Error_RegionsList>(regList->ReleaseRegion( second_region ));
 
-        if (!errRegs || errRegs->Type() != RegList_ErrType::ERR_EXISTING_REG_INSERTION) {
-            err = std::make_shared<Error_Custom>( "Error isn't detected (Trying to insert existing region)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "ReleaseRegion() Wrong behavior after second insertion" );
+        if (!errRegs || errRegs->Type() != ERL_Type::EXISTING_REG_INSERTION) {
+            err = ERR_CUSTOM( err_mess );                                                                                   TRACE_CUSTOM_PRNT_CNT( err, "Wrong behaviour after second insertion" );
         }
-
         delete[] memoryPitch;
         Log::test( "Log.txt" ) << LogTest::Finished{ true };
         return;
@@ -82,11 +81,12 @@ void RegionsList_Tester::Test_DoubleInserion()
 void RegionsList_Tester::Test_OverlappedInsertion()
 {
     Log::test( "Log.txt" ) << LogTest::Start{ "Test Overlapping Region Insertions", 1 };
-
     Error_BasePtr err = nullptr;
     size_t regList_initCap = 0;
     size_t pitch_size = 4000;
     CELL* memoryPitch = new CELL[pitch_size];
+    Region_P bounds = { memoryPitch, pitch_size };
+
     auto regList = std::make_shared<RegionsList<CELL>>( regList_initCap );
 
     // Тестовые вставки
@@ -102,66 +102,67 @@ void RegionsList_Tester::Test_OverlappedInsertion()
 
     do {
         // Проверяем RegionsList в процессе инициализации
-        TestData td = rl_check::CheckRegionsListInitialization( regList, regList_initCap, initial_region, Region_P{ memoryPitch, pitch_size }, err );
-        TRACE_PRINT_CONTINUE( err, "RegionsList initialization error" );
+        std::tie(err, std::ignore) = rl_check::Check_RegList_Init( regList, regList_initCap, initial_region, bounds );  TRACE_CUSTOM_PRNT_CNT( err, "RegionsList initialization error" );
+
+        std::string errMess = "Error isn't detected: Trying to";
 
         // Пытаемся заинсертить перекрывающийся слева регион, следим за ошибкой
-        auto errRegs = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->ReleaseRegion( left_overlapped ));
-        if (!errRegs || errRegs->Type() != RegList_ErrType::ERR_OVERLAPPED_REG_INSERTION) {
-            err = std::make_shared<Error_Custom>( "Error isn't detected (Trying to insert left overlapped region)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "ReleaseRegion() Wrong behavior after initial insertion" );
+        auto errRegs = ErrorCast<Error_RegionsList>( regList->ReleaseRegion( left_overlapped ) );
+        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        {
+            err = ERR_CUSTOM( errMess + " insert left overlapped region)" );                                            TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after initial insertion" );
         }
         // Пытаемся заинсертить перекрывающийся справа регион, следим за ошибкой
-        errRegs = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->ReleaseRegion( right_overlapped ));
-        if (!errRegs || errRegs->Type() != RegList_ErrType::ERR_OVERLAPPED_REG_INSERTION) {
-            err = std::make_shared<Error_Custom>( "Error isn't detected (Trying to insert right overlapped region)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "ReleaseRegion() Wrong behavior after initial insertion" );
+        errRegs = ErrorCast<Error_RegionsList>( regList->ReleaseRegion( right_overlapped ) );
+        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        {
+            err = ERR_CUSTOM( errMess + " insert right overlapped region)" );                                           TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after initial insertion" );
         }
         // Делаем вторую вставку
-        err = regList->ReleaseRegion( second_region );                                  TRACE_PRINT_CONTINUE( err, "Error during RegionsList second insertion" );
+        err = regList->ReleaseRegion( second_region );                                                                  TRACE_CUSTOM_PRNT_CNT( err, "Error during RegionsList second insertion" );
         right_overlapped = { memoryPitch + 249, 50 };
 
         // Пытаемся заинсертить посередине перекрывающийся слева регион
-        errRegs = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->ReleaseRegion( medium_left_overlapped ));
-        if (!errRegs || errRegs->Type() != RegList_ErrType::ERR_OVERLAPPED_REG_INSERTION) {
-            err = std::make_shared<Error_Custom>( "Error isn't detected (Trying to insert medium left overlapped region)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "ReleaseRegion() Wrong behavior after second insertion" );
+        errRegs = ErrorCast<Error_RegionsList>( regList->ReleaseRegion( medium_left_overlapped ) );
+        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        {
+            err = ERR_CUSTOM( errMess + " insert medium left overlapped region)" );                                     TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after second insertion" );
         }
         // Пытаемся заинсертить посередине перекрывающийся слева и смежный справа регион
-        errRegs = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->ReleaseRegion( medium_left_overlapped_adj ));
-        if (!errRegs || errRegs->Type() != RegList_ErrType::ERR_OVERLAPPED_REG_INSERTION) {
-            err = std::make_shared<Error_Custom>( "Error isn't detected (Trying to insert medium left overlapped right-adjacent region)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "ReleaseRegion() Wrong behavior after second insertion" );
+        errRegs = ErrorCast<Error_RegionsList>(regList->ReleaseRegion( medium_left_overlapped_adj ));
+        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        {
+            err = ERR_CUSTOM( errMess + " insert medium left overlapped right-adjacent region)" );                      TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after second insertion" );
         }
         // Пытаемся заинсертить посередине перекрывающийся справа регион
-        errRegs = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->ReleaseRegion( medium_right_overlapped ));
-        if (!errRegs || errRegs->Type() != RegList_ErrType::ERR_OVERLAPPED_REG_INSERTION) {
-            err = std::make_shared<Error_Custom>( "Error isn't detected (Trying to insert medium right overlapped region)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "ReleaseRegion() Wrong behavior after second insertion" );
+        errRegs = ErrorCast<Error_RegionsList>(regList->ReleaseRegion( medium_right_overlapped ));
+        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        {
+            err = ERR_CUSTOM( errMess + " insert medium right overlapped region)" );                                    TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after second insertion" );
         }
         // Пытаемся заинсертить посередине перекрывающийся справа и смежный слева регион
-        errRegs = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->ReleaseRegion( medium_right_overlapped_adj ));
-        if (!errRegs || errRegs->Type() != RegList_ErrType::ERR_OVERLAPPED_REG_INSERTION) {
-        	err = std::make_shared<Error_Custom>( "Error isn't detected (Trying to insert medium right overlapped left-adjacent region)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "ReleaseRegion() Wrong behavior after second insertion" );
+        errRegs = ErrorCast<Error_RegionsList>(regList->ReleaseRegion( medium_right_overlapped_adj ));
+        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        {
+        	err = ERR_CUSTOM( errMess + " insert medium right overlapped left-adjacent region)" );                      TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after second insertion" );
         }
         // Пытаемся заинсертить посередине перекрывающийся слева и справа регион
-        errRegs = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->ReleaseRegion( medium_left_right ));
-        if (!errRegs || errRegs->Type() != RegList_ErrType::ERR_OVERLAPPED_REG_INSERTION) {
-            err = std::make_shared<Error_Custom>( "Error isn't detected (Trying to insert medium right and left overlapped region)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "ReleaseRegion() Wrong behavior after second insertion" );
+        errRegs = ErrorCast<Error_RegionsList>(regList->ReleaseRegion( medium_left_right ));
+        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        {
+            err = ERR_CUSTOM( errMess + " insert medium right and left overlapped region)" );                           TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after second insertion" );
         }
         // Пытаемся заинсертить крайний левый перекрывающийся регион
-        errRegs = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->ReleaseRegion( left_overlapped ));
-        if (!errRegs || errRegs->Type() != RegList_ErrType::ERR_OVERLAPPED_REG_INSERTION) {
-        	err = std::make_shared<Error_Custom>( "Error isn't detected (Trying to insert left overlapped region)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "ReleaseRegion() Wrong behavior after second insertion" );
+        errRegs = ErrorCast<Error_RegionsList>(regList->ReleaseRegion( left_overlapped ));
+        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        {
+        	err = ERR_CUSTOM( errMess + " to insert left overlapped region)" );                                         TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after second insertion" );
         }
         // Пытаемся заинсертить крайний правый перекрывающийся регион
-        errRegs = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->ReleaseRegion( right_overlapped ));
-        if (!errRegs || errRegs->Type() != RegList_ErrType::ERR_OVERLAPPED_REG_INSERTION) {
-            err = std::make_shared<Error_Custom>( "Error isn't detected (Trying to insert right overlapped region)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "ReleaseRegion() Wrong behavior after second insertion" );
+        errRegs = ErrorCast<Error_RegionsList>(regList->ReleaseRegion( right_overlapped ));
+        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        {
+            err = ERR_CUSTOM( errMess + " insert right overlapped region)" );                                           TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after second insertion" );
         }
         delete[] memoryPitch;
         Log::test( "Log.txt" ) << LogTest::Finished{ true };
@@ -178,7 +179,6 @@ void RegionsList_Tester::Test_OverlappedInsertion()
 void RegionsList_Tester::Test_GrabbingFromEmptyList()
 {
     Log::test( "Log.txt" ) << LogTest::Start{ "Test Grabbing From Empty List", 1 };
-
     Error_BasePtr err = nullptr;
     CELL* marker = new CELL( utils::random_int( 0, 100 ) );
     CELL* grabbedReg = marker;
@@ -189,22 +189,21 @@ void RegionsList_Tester::Test_GrabbingFromEmptyList()
         TestData td = { 0 };
         td.p_listState_resulted = { 3, 0, 1, 2, 1, 1 };
         td.s_listState_resulted = { 3, 0, 1, 2, 1, 1 };
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after creation" );
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after creation" );
 
         // Пытаемся захватить регион из пустого списка, следим за ошибкой
-        auto errRegs = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->GrabRegion( 1, &grabbedReg ));
+        auto errRegs = ErrorCast<Error_RegionsList>( regList->GrabRegion( 1, &grabbedReg ) );
 
-        if (!errRegs || errRegs->Type() != RegList_ErrType::ERR_GRAB_FROM_EMPTY_LIST) {
-            err = std::make_shared<Error_Custom>( "Error isn't detected (Trying to grab region from empty S-List)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "GrabRegion() Wrong behavior after RegionsList creation" );
+        if (!errRegs || errRegs->Type() != ERL_Type::GRAB_FROM_EMPTY_LIST)
+        {
+            err = ERR_CUSTOM( "Error isn't detected (Trying to grab region from empty S-List)" );                       TRACE_CUSTOM_PRNT_CNT( err, "GrabRegion() Wrong behavior after RegionsList creation" );
         }
-        if (grabbedReg != marker) {
-            err = std::make_shared<Error_Custom>( "Output pointer has been changed during attempt to grab region from empty S-List", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "GrabRegion() Wrong behavior after RegionsList creation" );
+        if (grabbedReg != marker)
+        {
+            err = ERR_CUSTOM( "Output pointer changed during grabing the region from empty S-List" );                   TRACE_CUSTOM_PRNT_CNT( err, "GrabRegion() Wrong behavior after RegionsList creation" );
         }
-
         // Проверяем корректность RegionsList после попытки захвата
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after attempt to grab" );
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after attempt to grab" );
 
         delete marker;
         Log::test( "Log.txt" ) << LogTest::Finished{ true };
@@ -226,8 +225,10 @@ void RegionsList_Tester::Test_GrabbingTooBigRegion()
     size_t regList_initCap = 0;
     size_t pitch_size = 20000;
     CELL* memoryPitch = new CELL[pitch_size];
+    Region_P bounds = { memoryPitch, pitch_size };
     CELL* marker = memoryPitch + utils::random_int( 0, (int)pitch_size - 1 );
     CELL* grabbedReg = marker;
+
     auto regList = std::make_shared<RegionsList<CELL>>( regList_initCap );
 
     Region_P initial_insertion = { memoryPitch,      10 };
@@ -235,47 +236,48 @@ void RegionsList_Tester::Test_GrabbingTooBigRegion()
 
     do {
         // Проверяем RegionsList в процессе инициализации
-        TestData td = rl_check::CheckRegionsListInitialization( regList, regList_initCap, initial_insertion, Region_P{ memoryPitch, pitch_size }, err );
-        TRACE_PRINT_CONTINUE( err, "RegionsList initialization error" );
+        TestData td;
+        std::tie( err, td ) = rl_check::Check_RegList_Init( regList, regList_initCap, initial_insertion, bounds );      TRACE_CUSTOM_PRNT_CNT( err, "RegionsList initialization error" );
 
         // Пытаемся захватить слишком большой регион, следим за ошибкой
-        auto errRegs = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->GrabRegion( 11, &grabbedReg ));
+        auto errRegs = ErrorCast<Error_RegionsList>(regList->GrabRegion( 11, &grabbedReg ));
 
-        if (!errRegs || errRegs->Type() != RegList_ErrType::ERR_CONSISTENT_REG_NOTFOUND) {
-            err = std::make_shared<Error_Custom>( "Error isn't detected (Trying to grab region with size is greater than S-List has)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "GrabRegion() Wrong behavior after initial insertion" );
+        if (!errRegs || errRegs->Type() != ERL_Type::CONSISTENT_REG_NOTFOUND)
+        {
+            err = ERR_CUSTOM( "Error isn't detected (Trying to grab region with size greater than S-List has)" );       TRACE_CUSTOM_PRNT_CNT( err, "GrabRegion() Wrong behavior after initial insertion" );
         }
-        if (grabbedReg != marker) {
-            err = std::make_shared<Error_Custom>( "Output pointer has been changed during attempt to grab region with too big size", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "GrabRegion() Wrong behavior after initial insertion" );
+        if (grabbedReg != marker)
+        {
+            err = ERR_CUSTOM( "Output pointer has been changed during attempt to grab region with too big size" );      TRACE_CUSTOM_PRNT_CNT( err, "GrabRegion() Wrong behavior after initial insertion" );
         }
 
         // Проверяем корректность RegionsList после попытки захвата слишком большого региона
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after initial insertion and trying to grab too big region" );
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after initial insertion and trying to grab too big region" );
 
         // Делаем вторую вставку
-        err = regList->ReleaseRegion( second_insertion );                               TRACE_PRINT_CONTINUE( err, "Error during RegionsList second insertion" );
+        err = regList->ReleaseRegion( second_insertion );                                                               TRACE_CUSTOM_PRNT_CNT( err, "Error during RegionsList second insertion" );
 
         // Проверяем корректность RegionsList после второй вставки
         td.p_listState_resulted = { 3, 2, 1, 0, 1, 3 };
         td.s_listState_resulted = { 3, 2, 1, 0, 1, 3 };
         td.p_listContent_resulted = { initial_insertion, second_insertion };
         td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after second insertion" );
+
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after second insertion" );
 
         // Пытаемся захватить слишком большой регион после второй вставки, следим за ошибкой
-        errRegs = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->GrabRegion( 12, &grabbedReg ));
-        if (!errRegs || errRegs->Type() != RegList_ErrType::ERR_CONSISTENT_REG_NOTFOUND) {
-            err = std::make_shared<Error_Custom>( "Error isn't detected (Trying to grab the region with size is greater than S-List has)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "GrabRegion() Wrong behavior after second insertion" );
+        errRegs = ErrorCast<Error_RegionsList>(regList->GrabRegion( 12, &grabbedReg ));
+        if (!errRegs || errRegs->Type() != ERL_Type::CONSISTENT_REG_NOTFOUND)
+        {
+            err = ERR_CUSTOM( "Error isn't detected (Trying to grab the region with size greater than S-List has)" );   TRACE_CUSTOM_PRNT_CNT( err, "GrabRegion() Wrong behavior after second insertion" );
         }
-        if (grabbedReg != marker) {
-            err = std::make_shared<Error_Custom>( "Output pointer has been changed during attempt to grab region with too big size", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "GrabRegion() Wrong behavior after second insertion" );
+        if (grabbedReg != marker)
+        {
+            err = ERR_CUSTOM( "Output pointer has been changed during attempt to grab region with too big size" );      TRACE_CUSTOM_PRNT_CNT( err, "GrabRegion() Wrong behavior after second insertion" );
         }
 
         // Проверяем корректность RegionsList после попытки захвата слишком большого региона
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after second insertion and trying to grab too big region" );
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after second insertion and trying to grab too big region" );
 
         delete[] memoryPitch;
         Log::test( "Log.txt" ) << LogTest::Finished{ true };
@@ -297,6 +299,7 @@ void RegionsList_Tester::Test_ListsExpanding()
     size_t regList_initCap = 0;
     size_t pitch_size = 4000;
     CELL* memoryPitch = new CELL[pitch_size];
+
     auto regList = std::make_shared<RegionsList<CELL>>( regList_initCap );
 
     // Формируем набор вставок
@@ -310,16 +313,15 @@ void RegionsList_Tester::Test_ListsExpanding()
         TestData td = { 0 };
         td.p_listState_resulted = { 3, 0, 1, 2, 1, 1 };
         td.s_listState_resulted = { 3, 0, 1, 2, 1, 1 };
-        rl_check::CheckRegionsList( regList, td, err );             TRACE_PRINT_CONTINUE( err, "RegionsList is broken after creation" );
+        err = rl_check::CheckRegionsList( regList, td );            TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after creation" );
 
         // Производим вставки с целью расширения P- и S-списков
-        std::string errMess = "Error during RegionsList insertion №";
-        uint8_t c = 0;
-        err = regList->ReleaseRegion( regs[100] );                  TRACE_PRINT_CONTINUE( err, errMess + std::to_string(c++) ); // [---] [#B#] [-E-]
-        err = regList->ReleaseRegion( regs[101] );                  TRACE_PRINT_CONTINUE( err, errMess + std::to_string(c++) ); // [---] [#B#] [###] E
-        err = regList->ReleaseRegion( regs[102] );                  TRACE_PRINT_CONTINUE( err, errMess + std::to_string(c++) ); // [---] [---] [#B#] [###] [###] [-E-]
-        err = regList->ReleaseRegion( regs[103] );                  TRACE_PRINT_CONTINUE( err, errMess + std::to_string(c++) ); // [---] [---] [#B#] [###] [###] [###] E
-        err = regList->ReleaseRegion( regs[104] );                  TRACE_PRINT_CONTINUE( err, errMess + std::to_string(c++) ); // [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [-E-] [---] [---]
+        std::string errMess = "Error during RegionsList insertion ";
+        err = regList->ReleaseRegion( regs[100] );                  TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(1) ); // [---] [#B#] [-E-]
+        err = regList->ReleaseRegion( regs[101] );                  TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(2) ); // [---] [#B#] [###] E
+        err = regList->ReleaseRegion( regs[102] );                  TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(3) ); // [---] [---] [#B#] [###] [###] [-E-]
+        err = regList->ReleaseRegion( regs[103] );                  TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(4) ); // [---] [---] [#B#] [###] [###] [###] E
+        err = regList->ReleaseRegion( regs[104] );                  TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(5) ); // [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [-E-] [---] [---]
 
         // Проверяем корерктность RegionsList после 5 вставок и 2 расширений вправо
         td.p_listState_resulted = { 12, 5, 4, 3, 4, 9 };
@@ -327,30 +329,31 @@ void RegionsList_Tester::Test_ListsExpanding()
         td.p_listContent_resulted = { regs[100], regs[101], regs[102], regs[103], regs[104] };
         td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
         td.intermediate_reg = Region_P{ memoryPitch, pitch_size };
-        rl_check::CheckRegionsList( regList, td, err );             TRACE_PRINT_CONTINUE( err, "RegionsList is broken after 5 insertions (expanded right 2 times)" );
+        err = rl_check::CheckRegionsList( regList, td );             TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after 5 insertions (expanded right 2 times)" );
 
         // Продолжаем расширять список вправо и влево (по одному разу)
+        int c = 6;
         for (uint8_t i = 105; i < 109; ++i, ++c) {      // Расширяем вправо
-            err = regList->ReleaseRegion( regs[i] );                TRACE_PRINT_CONTINUE( err, errMess + std::to_string(c) );   // [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] E
-        }                                                                                                       // last iteration  [---] [---] [---] [---] [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] [#№#] [-E-] [---] [---] [---] [---] [---] [---]
+            err = regList->ReleaseRegion( regs[i] );                TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(c) );   // [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] E
+        }                                                                                                      // last iteration    [---] [---] [---] [---] [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] [#№#] [-E-] [---] [---] [---] [---] [---] [---]
         for (uint8_t i = 109; i < 116; ++i, ++c) {      // Заполняем правое поле
-            err = regList->ReleaseRegion( regs[i] );                TRACE_PRINT_CONTINUE( err, errMess + std::to_string(c) );   // [---] [---] [---] [---] [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] [#№#] [###] [###] [###] [###] [###] [###] [###] E
+            err = regList->ReleaseRegion( regs[i] );                TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(c) );   // [---] [---] [---] [---] [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] [#№#] [###] [###] [###] [###] [###] [###] [###] E
         }
         for (uint8_t i = 91; i < 100; ++i, ++c) {       // Расширяем влево
-            err = regList->ReleaseRegion( regs[i] );                TRACE_PRINT_CONTINUE( err, errMess + std::to_string(c) );   // [#B#] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [#№#] [###] [###] [###] [###] [###] [###] [###] E
-        }                                                                                                       // last iteration  [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [-E-] [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [---]
+            err = regList->ReleaseRegion( regs[i] );                TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(c) );   // [#B#] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [#№#] [###] [###] [###] [###] [###] [###] [###] E
+        }                                                                                                      // last iteration    [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [-E-] [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [---]
         for (uint8_t i = 116; i < 128; ++i, ++c) {      // Заполняем правое поле
-            err = regList->ReleaseRegion( regs[i] );                TRACE_PRINT_CONTINUE( err, errMess + std::to_string(c) );   // [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] E
+            err = regList->ReleaseRegion( regs[i] );                TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(c) );   // [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] E
         }
         for (uint8_t i = 80; i < 91; ++i, ++c) {        // Заполняем левое поле
-            err = regList->ReleaseRegion( regs[i] );                TRACE_PRINT_CONTINUE( err, errMess + std::to_string(c) );   // [#B#] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] E
+            err = regList->ReleaseRegion( regs[i] );                TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(c) );   // [#B#] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] E
         }
         // Проверяем корерктность RegionsList после 43 вставок и 2 расширений (вправо и влево)
         td.p_listState_resulted = { 48, 48, 0, 0, 0, 48 };
         td.s_listState_resulted = { 48, 48, 0, 0, 0, 48 };
         td.p_listContent_resulted = std::vector<Region_P>( regs.begin() + 80, regs.begin() + 128 );
         td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
-        rl_check::CheckRegionsList( regList, td, err );             TRACE_PRINT_CONTINUE( err, "RegionsList is broken after 43 insertions (expanded 2 times to right and left)" );
+        err = rl_check::CheckRegionsList( regList, td );            TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after 43 insertions (expanded 2 times to right and left)" );
 
     } while (0);
 
@@ -364,24 +367,19 @@ void RegionsList_Tester::Test_InitialReleaseRegion()
 {
     Log::test( "Log.txt" ) << LogTest::Start{ "Test Insertions Initial" };
 
-    Error_BasePtr err = nullptr;
     size_t regList_initCap = 5;
     size_t pitch_size = 20000;
     CELL* memoryPitch = new CELL[pitch_size];
+    Region_P bounds = { memoryPitch, pitch_size };
+
     auto regList = std::make_shared<RegionsList<CELL>>( regList_initCap );
 
     // Тестовые вставки
     Region_P initial_insertion = { memoryPitch, pitch_size };
-
-    do {
-        // Проверяем RegionsList в процессе инициализации
-        rl_check::CheckRegionsListInitialization( regList, regList_initCap, initial_insertion, Region_P{ memoryPitch, pitch_size }, err );
-        TRACE_PRINT_CONTINUE( err, "RegionsList initialization error" );
-
-    } while (0);
+    auto res = rl_check::Check_RegList_Init( regList, regList_initCap, initial_insertion, bounds );                     TRACE_CUSTOM_PRNT( std::get<0>(res), "RegionsList initialization error" );
 
     delete[] memoryPitch;
-    Log::test( "Log.txt" ) << LogTest::Finished{ err == nullptr };
+    Log::test( "Log.txt" ) << LogTest::Finished{ std::get<0>( res ) == nullptr };
 }
 
 
@@ -394,6 +392,8 @@ void RegionsList_Tester::Test_SecondRelease_LeftRightAdj()
     size_t regList_initCap = 5;
     size_t pitch_size = 1000;
     CELL* memoryPitch = new CELL[pitch_size];
+    Region_P bounds = { memoryPitch, pitch_size };
+
     auto regList = std::make_shared<RegionsList<CELL>>( regList_initCap );
 
     // Тестовые вставки
@@ -403,24 +403,24 @@ void RegionsList_Tester::Test_SecondRelease_LeftRightAdj()
 
     do {
         // Проверяем RegionsList в процессе инициализации
-        TestData td = rl_check::CheckRegionsListInitialization( regList, regList_initCap, initial_insertion, Region_P{ memoryPitch, pitch_size }, err );
-        TRACE_PRINT_CONTINUE( err, "RegionsList initialization error" );
+        TestData td;
+        std::tie( err, td ) = rl_check::Check_RegList_Init( regList, regList_initCap, initial_insertion, bounds );      TRACE_CUSTOM_PRNT_CNT( err, "RegionsList initialization error" );
         
         // Делаем смежную вставку слева
-        err = regList->ReleaseRegion( left_insertion_adj );                             TRACE_PRINT_CONTINUE( err, "Error during RegionsList left-adjacent insertion" );
+        err = regList->ReleaseRegion( left_insertion_adj );                                                             TRACE_CUSTOM_PRNT_CNT( err, "Error during RegionsList left-adjacent insertion" );
 
         // Проверяем корректность RegionsList после смежной вставки слева
         td.p_listContent_resulted = { { memoryPitch + 450, 100 } };
         td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after left-adjacent insertion" );
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after left-adjacent insertion" );
 
         // Делаем смежную вставку справа
-        err = regList->ReleaseRegion( right_insertion_adj );                            TRACE_PRINT_CONTINUE( err, "Error during RegionsList right-adjacent insertion" );
+        err = regList->ReleaseRegion( right_insertion_adj );                                                            TRACE_CUSTOM_PRNT_CNT( err, "Error during RegionsList right-adjacent insertion" );
 
         // Проверяем корректность RegionsList после смежной вставки справа
         td.p_listContent_resulted = { { memoryPitch + 450, 150 } };
         td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after right-adjacent insertion" );
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after right-adjacent insertion" );
 
     } while (0);
 
@@ -438,6 +438,8 @@ void RegionsList_Tester::Test_SecondRelease_Left_Less_Size()
     size_t regList_initCap = 5;
     size_t pitch_size = 1000;
     CELL* memoryPitch = new CELL[pitch_size];
+    Region_P bounds = { memoryPitch, pitch_size };
+
     auto regList = std::make_shared<RegionsList<CELL>>( regList_initCap );
 
     // Тестовые вставки
@@ -446,18 +448,18 @@ void RegionsList_Tester::Test_SecondRelease_Left_Less_Size()
 
     do {
         // Проверяем RegionsList в процессе инициализации
-        TestData td = rl_check::CheckRegionsListInitialization( regList, regList_initCap, initial_insertion, Region_P{ memoryPitch, pitch_size }, err );
-        TRACE_PRINT_CONTINUE( err, "RegionsList initialization error" );
+        TestData td;
+        std::tie( err, td ) = rl_check::Check_RegList_Init( regList, regList_initCap, initial_insertion, bounds );      TRACE_CUSTOM_PRNT_CNT( err, "RegionsList initialization error" );
 
         // Делаем вставку слева меньшей ширины
-        err = regList->ReleaseRegion( left_insertion_size_less );                       TRACE_PRINT_CONTINUE( err, "Error during RegionsList left-size-less insertion" );
+        err = regList->ReleaseRegion( left_insertion_size_less );                                                       TRACE_CUSTOM_PRNT_CNT( err, "Error during RegionsList left-size-less insertion" );
 
         // Проверяем корректность RegionsList после вставки слева меньшей ширины
         td.p_listState_resulted = { 5, 2, 1, 2, 1, 3 };
         td.s_listState_resulted = { 5, 2, 1, 2, 1, 3 };
         td.p_listContent_resulted = { left_insertion_size_less, initial_insertion };
         td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after left-size-less insertion" );
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after left-size-less insertion" );
 
     } while (0);
 
@@ -475,6 +477,8 @@ void RegionsList_Tester::Test_SecondRelease_Left_Great_Size()
     size_t regList_initCap = 5;
     size_t pitch_size = 1000;
     CELL* memoryPitch = new CELL[pitch_size];
+    Region_P bounds = { memoryPitch, pitch_size };
+
     auto regList = std::make_shared<RegionsList<CELL>>( regList_initCap );
 
     // Тестовые вставки
@@ -483,18 +487,18 @@ void RegionsList_Tester::Test_SecondRelease_Left_Great_Size()
 
     do {
         // Проверяем RegionsList в процессе инициализации
-        TestData td = rl_check::CheckRegionsListInitialization( regList, regList_initCap, initial_insertion, Region_P{ memoryPitch, pitch_size }, err );
-        TRACE_PRINT_CONTINUE( err, "RegionsList initialization error" );
+        TestData td;
+        std::tie( err, td ) = rl_check::Check_RegList_Init( regList, regList_initCap, initial_insertion, bounds );      TRACE_CUSTOM_PRNT_CNT( err, "RegionsList initialization error" );
 
         // Делаем вставку слева большей ширины
-        err = regList->ReleaseRegion( left_insertion_size_great );                      TRACE_PRINT_CONTINUE( err, "Error during RegionsList left-size-great insertion" );
+        err = regList->ReleaseRegion( left_insertion_size_great );                                                      TRACE_CUSTOM_PRNT_CNT( err, "Error during RegionsList left-size-great insertion" );
 
         // Проверяем корректность RegionsList после вставки слева большей ширины
         td.p_listState_resulted = { 5, 2, 1, 2, 1, 3 };
         td.s_listState_resulted = { 5, 2, 2, 1, 2, 4 };
         td.p_listContent_resulted = { left_insertion_size_great, initial_insertion };
         td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after left-size-great insertion" );
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after left-size-great insertion" );
 
     } while (0);
 
@@ -512,6 +516,8 @@ void RegionsList_Tester::Test_SecondRelease_Left_Equal_Size()
     size_t regList_initCap = 5;
     size_t pitch_size = 1000;
     CELL* memoryPitch = new CELL[pitch_size];
+    Region_P bounds = { memoryPitch, pitch_size };
+
     auto regList = std::make_shared<RegionsList<CELL>>( regList_initCap );
 
     // Тестовые вставки
@@ -520,18 +526,18 @@ void RegionsList_Tester::Test_SecondRelease_Left_Equal_Size()
 
     do {
         // Проверяем RegionsList в процессе инициализации
-        TestData td = rl_check::CheckRegionsListInitialization( regList, regList_initCap, initial_insertion, Region_P{ memoryPitch, pitch_size }, err );
-        TRACE_PRINT_CONTINUE( err, "RegionsList initialization error" );
+        TestData td;
+        std::tie( err, td ) = rl_check::Check_RegList_Init( regList, regList_initCap, initial_insertion, bounds );      TRACE_CUSTOM_PRNT_CNT( err, "RegionsList initialization error" );
 
         // Делаем вставку слева равной ширины
-        err = regList->ReleaseRegion( left_insertion_size_equal );                      TRACE_PRINT_CONTINUE( err, "Error during RegionsList left-size-equal insertion" );
+        err = regList->ReleaseRegion( left_insertion_size_equal );                                                      TRACE_CUSTOM_PRNT_CNT( err, "Error during RegionsList left-size-equal insertion" );
 
         // Проверяем корректность RegionsList после вставки слева равной ширины
         td.p_listState_resulted = { 5, 2, 1, 2, 1, 3 };
         td.s_listState_resulted = { 5, 2, 1, 2, 1, 3 };
         td.p_listContent_resulted = { left_insertion_size_equal, initial_insertion };
         td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after left-size-equal insertion" );
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after left-size-equal insertion" );
 
     } while (0);
 
@@ -549,6 +555,8 @@ void RegionsList_Tester::Test_SecondRelease_Right_Less_Size()
     size_t regList_initCap = 5;
     size_t pitch_size = 1000;
     CELL* memoryPitch = new CELL[pitch_size];
+    Region_P bounds = { memoryPitch, pitch_size };
+
     auto regList = std::make_shared<RegionsList<CELL>>( regList_initCap );
 
     // Тестовые вставки
@@ -557,18 +565,18 @@ void RegionsList_Tester::Test_SecondRelease_Right_Less_Size()
 
     do {
         // Проверяем RegionsList в процессе инициализации
-        TestData td = rl_check::CheckRegionsListInitialization( regList, regList_initCap, initial_insertion, Region_P{ memoryPitch, pitch_size }, err );
-        TRACE_PRINT_CONTINUE( err, "RegionsList initialization error" );
+        TestData td;
+        std::tie( err, td ) = rl_check::Check_RegList_Init( regList, regList_initCap, initial_insertion, bounds );      TRACE_CUSTOM_PRNT_CNT( err, "RegionsList initialization error" );
 
         // Делаем вставку справа меньшей ширины
-        err = regList->ReleaseRegion( right_insertion_size_less );                      TRACE_PRINT_CONTINUE( err, "Error during RegionsList right-size-less insertion" );
+        err = regList->ReleaseRegion( right_insertion_size_less );                                                      TRACE_CUSTOM_PRNT_CNT( err, "Error during RegionsList right-size-less insertion" );
 
         // Проверяем корректность RegionsList после вставки справа меньшей ширины
         td.p_listState_resulted = { 5, 2, 2, 1, 2, 4 };
         td.s_listState_resulted = { 5, 2, 1, 2, 1, 3 };
         td.p_listContent_resulted = { initial_insertion, right_insertion_size_less };
         td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after right-size-less insertion" );
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after right-size-less insertion" );
 
     } while (0);
 
@@ -586,6 +594,8 @@ void RegionsList_Tester::Test_SecondRelease_Right_Great_Size()
     size_t regList_initCap = 5;
     size_t pitch_size = 1000;
     CELL* memoryPitch = new CELL[pitch_size];
+    Region_P bounds = { memoryPitch, pitch_size };
+
     auto regList = std::make_shared<RegionsList<CELL>>( regList_initCap );
 
     // Тестовые вставки
@@ -594,18 +604,18 @@ void RegionsList_Tester::Test_SecondRelease_Right_Great_Size()
 
     do {
         // Проверяем RegionsList в процессе инициализации
-        TestData td = rl_check::CheckRegionsListInitialization( regList, regList_initCap, initial_insertion, Region_P{ memoryPitch, pitch_size }, err );
-        TRACE_PRINT_CONTINUE( err, "RegionsList initialization error" );
+        TestData td;
+        std::tie( err, td ) = rl_check::Check_RegList_Init( regList, regList_initCap, initial_insertion, bounds );      TRACE_CUSTOM_PRNT_CNT( err, "RegionsList initialization error" );
 
         // Делаем вставку справа большей ширины
-        err = regList->ReleaseRegion( right_insertion_size_great );                     TRACE_PRINT_CONTINUE( err, "Error during RegionsList right-size-great insertion" );
+        err = regList->ReleaseRegion( right_insertion_size_great );                                                     TRACE_CUSTOM_PRNT_CNT( err, "Error during RegionsList right-size-great insertion" );
         
         // Проверяем корректность RegionsList после вставки справа большей ширины
         td.p_listState_resulted = { 5, 2, 2, 1, 2, 4 };
         td.s_listState_resulted = { 5, 2, 2, 1, 2, 4 };
         td.p_listContent_resulted = { initial_insertion, right_insertion_size_great };
         td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after right-size-great insertion" );
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after right-size-great insertion" );
 
     } while (0);
 
@@ -623,6 +633,8 @@ void RegionsList_Tester::Test_SecondRelease_Right_Equal_Size()
     size_t regList_initCap = 5;
     size_t pitch_size = 1000;
     CELL* memoryPitch = new CELL[pitch_size];
+    Region_P bounds = { memoryPitch, pitch_size };
+
     auto regList = std::make_shared<RegionsList<CELL>>( regList_initCap );
 
     // Тестовые вставки
@@ -631,18 +643,18 @@ void RegionsList_Tester::Test_SecondRelease_Right_Equal_Size()
 
     do {
         // Проверяем RegionsList в процессе инициализации
-        TestData td = rl_check::CheckRegionsListInitialization( regList, regList_initCap, initial_insertion, Region_P{ memoryPitch, pitch_size }, err );
-        TRACE_PRINT_CONTINUE( err, "RegionsList initialization error" );
+        TestData td;
+        std::tie( err, td ) = rl_check::Check_RegList_Init( regList, regList_initCap, initial_insertion, bounds );      TRACE_CUSTOM_PRNT_CNT( err, "RegionsList initialization error" );
 
         // Делаем вставку справа равной ширины
-        err = regList->ReleaseRegion( right_insertion_size_equal );                     TRACE_PRINT_CONTINUE( err, "Error during RegionsList right-size-equal insertion" );
+        err = regList->ReleaseRegion( right_insertion_size_equal );                                                     TRACE_CUSTOM_PRNT_CNT( err, "Error during RegionsList right-size-equal insertion" );
 
         // Проверяем корректность RegionsList после вставки справа равной ширины
         td.p_listState_resulted = { 5, 2, 2, 1, 2, 4 };
         td.s_listState_resulted = { 5, 2, 2, 1, 2, 4 };
         td.p_listContent_resulted = { initial_insertion, right_insertion_size_equal };
         td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after right-size-equal insertion" );
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after right-size-equal insertion" );
 
     } while (0);
 
@@ -662,6 +674,8 @@ void RegionsList_Tester::Test_GrabbingFromSingleSizedList()
     uint32_t grabb_size = 99;
     CELL *memoryPitch = new CELL[pitch_size];
     CELL *grabbedReg = nullptr;
+    Region_P bounds = { memoryPitch, pitch_size };
+
     auto regList = std::make_shared<RegionsList<CELL>>( regList_initCap );
 
     // Тестовые вставки
@@ -669,31 +683,29 @@ void RegionsList_Tester::Test_GrabbingFromSingleSizedList()
 
     do {
         // Проверяем RegionsList в процессе инициализации
-        rl_check::CheckRegionsListInitialization( regList, regList_initCap, initial_region, Region_P{ memoryPitch, pitch_size }, err );
-        TRACE_PRINT_CONTINUE( err, "RegionsList initialization error" );
+        std::tie(err, std::ignore) = rl_check::Check_RegList_Init( regList, regList_initCap, initial_region, bounds );  TRACE_CUSTOM_PRNT_CNT( err, "RegionsList initialization error" );
 
         // Делаем захват региона максимальной ширины, возвращая RegionsList в начальное состояние
-        err = regList->GrabRegion( pitch_size, &grabbedReg );                           TRACE_PRINT_CONTINUE( err, "Error during grabbing region with max size" );
+        err = regList->GrabRegion( pitch_size, &grabbedReg );                                                           TRACE_CUSTOM_PRNT_CNT( err, "Error during grabbing region with max size" );
 
         // Проверяем корректность RegionsList после захвата региона максимальной ширины
         TestData td = { 0 };
         td.p_listState_resulted = { 3, 0, 1, 2, 1, 1 };
         td.s_listState_resulted = { 3, 0, 1, 2, 1, 1 };
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after grabbing region with max size" );
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after grabbing region with max size" );
         
         // Проверяем указатель на захваченный регион
-        if (grabbedReg != memoryPitch) {
-            err = std::make_shared<Error_Custom>( "Output pointer is incorrect (it should refer to start of memory managed by RegionsList)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "GrabRegion() Wrong behavior after grabbing region with max size" );
+        if (grabbedReg != memoryPitch)
+        {
+            err = ERR_CUSTOM( "Broke output pointer (it should refer to start of memory managed by RegionsList)");      TRACE_CUSTOM_PRNT_CNT( err, "GrabRegion() Wrong behavior after grabbing region with max size" );
         }
         grabbedReg = nullptr;
 
         // RegionsList сейчас пуст. Инициализируем снова, проверяем его в процессе инициализации
-        rl_check::CheckRegionsListInitialization( regList, regList_initCap, initial_region, Region_P{ memoryPitch, pitch_size }, err );
-        TRACE_PRINT_CONTINUE( err, "RegionsList initialization error" );
+        std::tie(err, std::ignore) = rl_check::Check_RegList_Init( regList, regList_initCap, initial_region, bounds );  TRACE_CUSTOM_PRNT_CNT( err, "RegionsList initialization error" );
 
         // Делаем захват региона НЕмаксимальной ширины
-        err = regList->GrabRegion( grabb_size, &grabbedReg );                           TRACE_PRINT_CONTINUE( err, "Error during grabbing region with non-max size" );
+        err = regList->GrabRegion( grabb_size, &grabbedReg );                                                           TRACE_CUSTOM_PRNT_CNT( err, "Error during grabbing region with non-max size" );
 
         // Проверяем корректность RegionsList после захвата региона НЕмаксимальной ширины
         td.p_listState_resulted = { 3, 1, 1, 1, 1, 2 };
@@ -701,12 +713,12 @@ void RegionsList_Tester::Test_GrabbingFromSingleSizedList()
         td.p_listContent_resulted = { { memoryPitch + grabb_size, 1 } };
         td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
         td.intermediate_reg = Region_P{ memoryPitch, pitch_size };
-        rl_check::CheckRegionsList( regList, td, err );                                 TRACE_PRINT_CONTINUE( err, "RegionsList is broken after grabbing region with non-max size" );
+        err = rl_check::CheckRegionsList( regList, td );                                                                TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after grabbing region with non-max size" );
 
         // Проверяем указатель на захваченный регион
-        if (grabbedReg != memoryPitch) {
-            err = std::make_shared<Error_Custom>( "Output pointer is incorrect (it should refer to start of memory managed by RegionsList)", PLACE(), "Log.txt" );
-            TRACE_PRINT_CONTINUE( err, "GrabRegion() Wrong behavior after grabbing  region with non-max size" );
+        if (grabbedReg != memoryPitch)
+        {
+            err = ERR_CUSTOM( "Broke output pointer (it should refer to start of memory managed by RegionsList)");      TRACE_CUSTOM_PRNT_CNT( err, "GrabRegion() Wrong behavior after grabbing  region with non-max size" );
         }
     } while (0);
 
@@ -745,8 +757,8 @@ void RegionsList_Tester::Test_GrabbingsComplex()
 
                     do {
                         // Устанавливаем RegionsList в исходное состояние, проверяем
-                        rl_manip::SetupRegionsList( tested_regList, test_step, err );                               TRACE_CONTINUE( err, "RegionsList setting-up error in step:\n" + test_step.to_String() );
-                        rl_check::CheckRegionsList( tested_regList, test_step, err, true, true, true, false );      TRACE_CONTINUE( err, "RegionsList is broken after setting-up in step:\n" + test_step.to_String() );
+                        err = rl_manip::SetupRegionsList( tested_regList, test_step );                                  TRACE_CUSTOM_CNT( err, "RegionsList setting-up error in step:\n" + test_step.to_String() );
+                        err = rl_check::CheckRegionsList( tested_regList, test_step, true, true, true, false );         TRACE_CUSTOM_CNT( err, "RegionsList is broken after setting-up in step:\n" + test_step.to_String() );
 
                         // Производим захват
                         CELL* grabbedReg = marker;
@@ -754,24 +766,24 @@ void RegionsList_Tester::Test_GrabbingsComplex()
 
                         // Если ожидаемый адрес захваченного региона - null, значит запрашиваемый регион слишком велик. GrabRegion() должна вернуть ошибку, а выходной указатель - остаться неизменённым
                         if (req_size_exp_start.start == nullptr) {
-                            if (!err) {
-                                err = std::make_shared<Error_Custom>( "Incorrect condition didn't handled (Trying to grab the region with size greater than S-List has)", PLACE(), "Log.txt" );
-                                TRACE_CONTINUE( err, "GrabRegion() Wrong behavior" );
+                            auto grabErr = ErrorCast<Error_RegionsList>( err );
+                            if ( !grabErr || grabErr->Type() != ERL_Type::CONSISTENT_REG_NOTFOUND )
+                            {
+                                err = ERR_CUSTOM( "Incorrect condition didn't handled (Grab the region with size greater than S-List has)" );           TRACE_CUSTOM_CNT( err, "GrabRegion() Wrong behavior" );
                             }
-                            if (grabbedReg != marker) {
-                                err = std::make_shared<Error_Custom>( "Output pointer has been changed during the trying to grab the region with size greater than S-List has", PLACE(), "Log.txt" );
-                                TRACE_CONTINUE( err, "GrabRegion() Wrong behavior" );
+                            if (grabbedReg != marker)
+                            {
+                                err = ERR_CUSTOM( "Output pointer has been changed during grabbing the region with size greater than S-List has" );     TRACE_CUSTOM_CNT( err, "GrabRegion() Wrong behavior" );
                             }
                             err.reset();
                         }
                         // Если указатель на захваченный регион не совпадает с ожидаемым
                         else if( grabbedReg != req_size_exp_start.start )
                         {
-                            err = std::make_shared<Error_Custom>( "Output pointer refers to unexpected memory address", PLACE(), "Log.txt" );
-                            TRACE_CONTINUE( err, "GrabRegion() Wrong behavior" );
+                            err = ERR_CUSTOM( "Output pointer refers to unexpected memory address" );                   TRACE_CUSTOM_CNT( err, "GrabRegion() Wrong behavior" );
                         }
                         // Проверяем RegionsList теперь
-                        rl_check::CheckRegionsList( tested_regList, test_step, err );                               TRACE_CONTINUE( err, "RegionsList is broken after grabbing in step:\n" + test_step.to_String() );
+                        err = rl_check::CheckRegionsList( tested_regList, test_step );                                  TRACE_CUSTOM_CNT( err, "RegionsList is broken after grabbing in step:\n" + test_step.to_String() );
 
                         delete marker;
                         return;
@@ -819,20 +831,21 @@ void RegionsList_Tester::Test_InsertionsComplex()
                     do {
                         TestData t_data = std::get<1>( step );
                         std::string mnemo = std::get<0>( step );
+
                         // Костыль. TestData::intermediate_reg играет разную роль: для CheckRegionsList() это Bounds, для GenerateInsertionsComplex() это Released Region при вызове ReleaseRegion().
                         Region_P released_reg = t_data.intermediate_reg;
                         t_data.intermediate_reg = { Ins_complex::mem, (size_t)Ins_complex::Bounds::MEM_SIZE };       // Теперь в TestData::intermediate_reg записано значение Bounds 
 
                         // Устанавливаем RegionsList в исходное состояние, проверяем
-                        rl_manip::SetupRegionsList( regList, t_data, err );                                         TRACE_CONTINUE( err, "RegionsList setting-up error in step:\n" + t_data.to_String() + "\n" + mnemo);
-                        rl_check::CheckRegionsList( regList, t_data, err, true, true, true, false );                TRACE_CONTINUE( err, "RegionsList is broken after setting-up in step:\n" + t_data.to_String() + "\n" + mnemo );
+                        err = rl_manip::SetupRegionsList( regList, t_data );                                            TRACE_CUSTOM_CNT( err, "RegionsList setting-up error in step:\n" + t_data.to_String() + "\n" + mnemo);
+                        err = rl_check::CheckRegionsList( regList, t_data, true, true, true, false );                   TRACE_CUSTOM_CNT( err, "RegionsList is broken after setting-up in step:\n" + t_data.to_String() + "\n" + mnemo );
 
                         // Производим вставку
-                        err = regList->ReleaseRegion( released_reg );                                               TRACE_CONTINUE( err, "Error during region insertion in step:\n" + t_data.to_String() + "\n" + mnemo );
+                        err = regList->ReleaseRegion( released_reg );                                                   TRACE_CUSTOM_CNT( err, "Error during region insertion in step:\n" + t_data.to_String() + "\n" + mnemo );
                         
                         // Проверяем RegionsList теперь
-                        rl_check::CheckRegionsList( regList, t_data, err );                                         TRACE_CONTINUE( err, "RegionsList is broken after insertion in step:\n" + t_data.to_String() + "\n" + mnemo );
-                       return;
+                        err = rl_check::CheckRegionsList( regList, t_data );                                            TRACE_CUSTOM_CNT( err, "RegionsList is broken after insertion in step:\n" + t_data.to_String() + "\n" + mnemo );
+                        return;
 
                     } while (0);
                     {
@@ -852,46 +865,49 @@ void RegionsList_Tester::Test_InsertionsComplex()
 
 
 // Проверяет случайно многократные захват/вставку из/в RegionsList
-void RegionsList_Tester::Test_GrabbingsInsertionsRandom()
+void RegionsList_Tester::Test_GrabbingsInsertionsRandom(const ConfigGIR &conf)
 {
-    size_t transactions = 10000;
-    size_t count_grab = 0;
-    size_t count_release = 0;
-    std::chrono::nanoseconds release_time_ns( 0 );
-    std::chrono::nanoseconds grab_time_ns( 0 );
+    size_t transactions = conf.transactions;
+    size_t pitch_size = conf.mem_pitch_size;
+    size_t min_grab_size = conf.min_grab_size;
+    size_t max_grab_size = conf.max_grab_size;
+    CELL* memoryPitch = new CELL[pitch_size];
+    CELL* grabbedReg = nullptr;
+
+    Log::test( "Log.txt" ) << LogTest::Start{ "Test Grabbings Insertions Random (Transactions: " + std::to_string( conf.transactions ) + " Memory cells: " + std::to_string(conf.mem_pitch_size) +
+                                              " Min grab: " + std::to_string( conf.min_grab_size ) + " Max grab: " + std::to_string( conf.max_grab_size ) + ")", transactions };
+
+    // Пишем в память контрольные значения
+    uint8_t initial_val = utils::random_int( 0, 200 );
+    for (size_t i = 0; i < pitch_size; ++i) {
+        memoryPitch[i] = CELL( initial_val );
+    }
+
+    std::vector<Region_P> grabbedRegions;                                                           // Промежуточный вектор с захваченными регионами
+    std::list<std::pair<std::vector<TestData>, std::vector<TestData>>> performed_transactions;
+    TestData td = {};
+    Error_BasePtr err;
+    Error_BasePtr grab_err;
+
+    // Создаём/инициализируем тестируемый RegionsList
+    Region_P initial_reg{ memoryPitch, pitch_size };
+    size_t initial_capacity = 0;
+
+    auto regList = std::make_shared<RegionsList<CELL>>( initial_capacity );
+
+    TestData initial_td;
+    std::tie(err, initial_td) = rl_check::Check_RegList_Init( regList, initial_capacity, initial_reg, initial_reg );    TRACE_CUSTOM_PRNT_RET( err, "RegionsList initialization error" );
+    
+    err = rl_manip::GetRegionsListDetails( regList, td );                                                               TRACE_CUSTOM_PRNT_RET( err, "Can't get RegionsList details after initialization" );
 
     std::mutex mut;
     std::condition_variable cond;
     bool flag = false;
     bool stop = false;
-
-    Log::test( "Log.txt" ) << LogTest::Start{ "Test Grabbings Insertions Random", transactions };
-
-    size_t pitch_size = 1000;
-    size_t max_grab_size = 100;
-    size_t min_grab_size = 1;
-    CELL* memoryPitch = new CELL[pitch_size];
-    CELL* grabbedReg = nullptr;
-
-    uint8_t initial_val = utils::random_int( 0, 200 );      // Этим значением будут инициализированы ячейки памяти
-
-    // Пишем в память контрольные значения
-    for (size_t i = 0; i < pitch_size; ++i) {
-        memoryPitch[i] = CELL( initial_val );
-    }
-
-    std::vector<Region_P> grabbedRegions;       // Промежуточный вектор с захваченными регионами
-    TestData td = {};
-    Error_BasePtr err;
-    std::shared_ptr<Error_RegionsList> grab_err;
-    std::list<std::pair<std::vector<TestData>, std::vector<TestData>>> performed_transactions;
-
-    // Создаём/инициализируем тестируемый RegionsList
-    Region_P initial_reg{ memoryPitch, pitch_size };
-    size_t initial_capacity = 0;
-    auto regList = std::make_shared<RegionsList<CELL>>( initial_capacity );
-    auto initial_td = rl_check::CheckRegionsListInitialization( regList, initial_capacity, initial_reg, initial_reg, err );     TRACE_PRINT_RETURN_NONE( err, "RegionsList initialization error" );
-    rl_manip::GetRegionsListDetails( regList, td, err );                                                                        TRACE_PRINT_RETURN_NONE( err, "Can't get RegionsList details after initialization" );
+    size_t count_grab = 0;
+    size_t count_release = 0;
+    std::chrono::nanoseconds release_time_ns( 0 );
+    std::chrono::nanoseconds grab_time_ns( 0 );
 
     std::thread grab( [&, transactions]() mutable
         {
@@ -915,25 +931,37 @@ void RegionsList_Tester::Test_GrabbingsInsertionsRandom()
 
                     // Пытаемся захватить регион
                     auto start = std::chrono::high_resolution_clock::now();
-                    grab_err = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>( regList->GrabRegion( aquired_size, &grabbedReg ));
+                    grab_err = regList->GrabRegion( aquired_size, &grabbedReg );
                     auto stop = std::chrono::high_resolution_clock::now();
 
                     // Запоминаем результирующее состояние после попытки захвата
                     td.intermediate_reg = { grabbedReg, aquired_size };
-                    rl_manip::GetRegionsListDetails( regList, td, err );                                    TRACE_BREAK( err, "Can't get RegionsList details after another one Grab" );
+                    err = rl_manip::GetRegionsListDetails( regList, td );                                               TRACE_CUSTOM_BRK( err, "Can't get RegionsList details after another one Grab" );
                     performed_transactions.back().first.push_back( td );
 
                     // Проверяем RegionsList
-                    rl_check::CheckRegionsList( regList, td, err, false, false, false );                    TRACE_BREAK( err, "RegionsList is broken after another one Grab" );
-                    rl_check::CheckIfContentOutOfBounds( td.p_listContent_resulted, initial_reg, err );     TRACE_BREAK( err, "Element from P-List is out of bounds after another one Grab" );
-                    rl_check::CheckIfContentOutOfBounds( td.s_listContent_resulted, initial_reg, err );     TRACE_BREAK( err, "Element from P-List is out of bounds after another one Grab" );
+                    err = rl_check::CheckRegionsList( regList, td, false, false, false );                               TRACE_CUSTOM_BRK( err, "RegionsList is broken after another one Grab" );
+                    err = rl_check::CheckIfContentOutOfBounds( td.p_listContent_resulted, initial_reg );                TRACE_CUSTOM_BRK( err, "Element from P-List is out of bounds after another one Grab" );
+                    err = rl_check::CheckIfContentOutOfBounds( td.s_listContent_resulted, initial_reg );                TRACE_CUSTOM_BRK( err, "Element from P-List is out of bounds after another one Grab" );
 
                     // Если в GrabRegion() словили ошибку "Захват из пустого списка" или "Регион подходящей ширины не найден" более 5 раз, или другую ошибку - покидаем цикл
-                    if (grab_err) {
-                        if (attempts_counter++ >= 5 || (grab_err->Type() != RegList_ErrType::ERR_GRAB_FROM_EMPTY_LIST && grab_err->Type() != RegList_ErrType::ERR_CONSISTENT_REG_NOTFOUND))
-                            break;
-                        else
+                    if (grab_err)
+                    {
+                        auto regListErr = ErrorCast<Error_RegionsList>( grab_err );
+                        auto paramErr = ErrorCast<Error_Param>( grab_err );
+
+                        if( paramErr && !aquired_size ) {
+                            if( attempts_counter++ >= 5 )
+                                break;
                             continue;
+                        }
+                        else if( !regListErr || ( regListErr->Type() != ERL_Type::GRAB_FROM_EMPTY_LIST && regListErr->Type() != ERL_Type::CONSISTENT_REG_NOTFOUND )) {
+                            err = grab_err;
+                            break;
+                        }
+                        if( ( regListErr->Type() == ERL_Type::GRAB_FROM_EMPTY_LIST || regListErr->Type() == ERL_Type::CONSISTENT_REG_NOTFOUND) && attempts_counter++ >= 5)
+                            break;
+                        continue;
                     }
                     grabbedRegions.push_back( td.intermediate_reg );
 
@@ -944,10 +972,9 @@ void RegionsList_Tester::Test_GrabbingsInsertionsRandom()
                 } while (1);
 
                 // Если возникла непредусмотренная ошибка - логируем и сигналим "stop"
-                if (err || (grab_err->Type() != RegList_ErrType::ERR_GRAB_FROM_EMPTY_LIST && grab_err->Type() != RegList_ErrType::ERR_CONSISTENT_REG_NOTFOUND))
+                if (err)
                 {
-                    if (err) { err->Print(); }
-                    if (grab_err) { grab_err->Print(); }
+                    err->Print();
                     performed_transactions.back().first.push_back( td );
                     stop = true;
                 }
@@ -974,7 +1001,7 @@ void RegionsList_Tester::Test_GrabbingsInsertionsRandom()
                 for (int i = 0; i < 5; ++i)
                 {
                     if (grabbedRegions.empty()) {
-                        Log::warning() << "Nothing to release!" << Log::endlog{};
+                        //Log::warning() << "Nothing to release!" << Log::endlog{};
                         break;
                     }
                     err = nullptr;
@@ -989,17 +1016,17 @@ void RegionsList_Tester::Test_GrabbingsInsertionsRandom()
                     grabbedRegions.erase( grabbedRegions.begin() + index );
 
                     auto start = std::chrono::high_resolution_clock::now();
-                    err = std::dynamic_pointer_cast<Error_RegionsList, Error_Base>(regList->ReleaseRegion( td.intermediate_reg ));
+                    err = regList->ReleaseRegion( td.intermediate_reg );                                                TRACE_CUSTOM_BRK( err, "Error during releasing the region" );
                     auto stop = std::chrono::high_resolution_clock::now();
 
                     // Запоминаем результирующее состояние после релиза
-                    rl_manip::GetRegionsListDetails( regList, td, err );                                    TRACE_BREAK( err, "Can't get RegionsList details after another one Release" );
+                    err = rl_manip::GetRegionsListDetails( regList, td );                                               TRACE_CUSTOM_BRK( err, "Can't get RegionsList details after another one Release" );
                     performed_transactions.back().second.push_back( td );
 
                     // Проверяем RegionsList
-                    rl_check::CheckRegionsList( regList, td, err, false, false, false );                    TRACE_BREAK( err, "RegionsList is broken after another one Release" );
-                    rl_check::CheckIfContentOutOfBounds( td.p_listContent_resulted, initial_reg, err );     TRACE_BREAK( err, "Element from P-List is out of bounds after another one Release" );
-                    rl_check::CheckIfContentOutOfBounds( td.s_listContent_resulted, initial_reg, err );     TRACE_BREAK( err, "Element from P-List is out of bounds after another one Release" );
+                    err = rl_check::CheckRegionsList( regList, td, false, false, false );                               TRACE_CUSTOM_BRK( err, "RegionsList is broken after another one Release" );
+                    err = rl_check::CheckIfContentOutOfBounds( td.p_listContent_resulted, initial_reg );                TRACE_CUSTOM_BRK( err, "Element from P-List is out of bounds after another one Release" );
+                    err = rl_check::CheckIfContentOutOfBounds( td.s_listContent_resulted, initial_reg );                TRACE_CUSTOM_BRK( err, "Element from P-List is out of bounds after another one Release" );
 
                     // Плюсуем счётчик и время успешных освобождений
                     release_time_ns += (stop - start);
@@ -1008,7 +1035,7 @@ void RegionsList_Tester::Test_GrabbingsInsertionsRandom()
                 // В случае любой ошибки - логируем и сигналим "stop"
                 if (err)
                 {
-                    if (err) { err->Print(); }
+                    err->Print();
                     performed_transactions.back().second.push_back( td );
                     stop = true;
                 }
@@ -1022,40 +1049,40 @@ void RegionsList_Tester::Test_GrabbingsInsertionsRandom()
     release.join();
 
     // Если Grab- или Release- завершились с непредусмотренной ошибкой - выводим в лог все транзакции и выходим
-    if (err || (grab_err->Type() != RegList_ErrType::ERR_GRAB_FROM_EMPTY_LIST && grab_err->Type() != RegList_ErrType::ERR_CONSISTENT_REG_NOTFOUND)) {
-        log_transactions( performed_transactions, &Log::debug("Log.txt") );
+    if (err) {
+        //log_transactions( performed_transactions, &Log::debug("Log.txt") );
         Log::test( "Log.txt" ) << LogTest::Finished{ false };
         return;
     }
     do {
         td.intermediate_reg = initial_reg;
-        rl_check::CheckRegionsList( regList, td, err, false, false, true );                     TRACE_PRINT_CONTINUE( err, "RegionsList is broken after all transactions" );
+        err = rl_check::CheckRegionsList( regList, td, false, false, true );                                            TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after all transactions" );
 
         // Освобождаем оставшиеся регионы (это должно привести RegList в исходное состояние с 1 регионом)
         for (auto& reg : grabbedRegions) {
             err = regList->ReleaseRegion( reg );
             if (err) { break; }
         }
-        TRACE_PRINT_CONTINUE( err, "Can't release the region is remaining in a list of grabbed regions" );
+        TRACE_CUSTOM_PRNT_CNT( err, "Can't release the region is remaining in a list of grabbed regions" );
 
         // Проверяем RegionsList теперь - он должен был вернуться в исходное состояние (как при инициализации). State не проверяется, т.к. он изменился из-за расширений списков.
-        rl_check::CheckRegionsList( regList, initial_td, err, false, true, true );              TRACE_PRINT_CONTINUE(err, "RegionsList is broken after all the regions has been released (initial state expected)" );
+        err = rl_check::CheckRegionsList( regList, initial_td, false, true, true );     TRACE_CUSTOM_PRNT_CNT(err, "RegionsList is broken after all the regions has been released (initial state expected)" );
 
         // Проверяем состояние (только число регионов в списке)
         if (rl_manip::GetState<Region_P>( regList ).size != 1) {
-            err = std::make_shared<Error_Custom>( "P-State.size != 1", PLACE(), "Log.txt" );    TRACE_PRINT_CONTINUE(err, "RegionsList is broken after all the regions has been released (initial state expected)" );
+            err = ERR_CUSTOM( "P-State.size != 1" );                                    TRACE_CUSTOM_PRNT_CNT(err, "RegionsList is broken after all the regions has been released (initial state expected)" );
         }
         if (rl_manip::GetState<Region_S>( regList ).size != 1) {
-            err = std::make_shared<Error_Custom>( "S-State.size != 1", PLACE(), "Log.txt" );    TRACE_PRINT_CONTINUE(err, "RegionsList is broken after all the regions has been released (initial state expected)" );
+            err = ERR_CUSTOM( "S-State.size != 1" );                                    TRACE_CUSTOM_PRNT_CNT(err, "RegionsList is broken after all the regions has been released (initial state expected)" );
         }
         // Проверяем память (она должна выглядеть как вначале)
         for (size_t i = 0; i < pitch_size; ++i) {
             if (memoryPitch[i] != initial_val) {
-                err = std::make_shared<Error_Custom>( "Memory has different values comparing before Grab/Release manipulations", PLACE(), "Log.txt" );
+                err = ERR_CUSTOM( "Memory has different values comparing before Grab/Release manipulations" );
                 break;
             }
         }
-        TRACE_PRINT_CONTINUE( err, "Memory error" );
+        TRACE_CUSTOM_PRNT_CNT( err, "Memory error" );
     } while (0);
 
 
@@ -1063,8 +1090,10 @@ void RegionsList_Tester::Test_GrabbingsInsertionsRandom()
         log_transactions( performed_transactions, &Log::debug( "Log.txt" ) );
     }
 
-    Log::info( "Log.txt" ) << "Time spent for " << count_grab << " Grabbs:   " << std::chrono::duration_cast<std::chrono::milliseconds>(grab_time_ns).count() << "ms (average " << grab_time_ns.count()/count_grab << " ns)\n"
-                           << "Time spent for " << count_release << " Releases: " << std::chrono::duration_cast<std::chrono::milliseconds>(release_time_ns).count() << "ms (average " << release_time_ns.count()/count_release << " ns)\n" << Log::endlog{};
+    if( count_grab != 0 && count_release != 0 ) {
+        //Log::info( "Log.txt" ) << "Time spent for " << count_grab << " Grabbs:   " << std::chrono::duration_cast<std::chrono::milliseconds>( grab_time_ns ).count() << "ms (average " << grab_time_ns.count() / count_grab << " ns)\n"
+        //                       << "Time spent for " << count_release << " Releases: " << std::chrono::duration_cast<std::chrono::milliseconds>( release_time_ns ).count() << "ms (average " << release_time_ns.count() / count_release << " ns)\n" << Log::endlog{};
+    }
     Log::test( "Log.txt" ) << LogTest::Finished{ err == nullptr };
     return;
 }
@@ -1245,9 +1274,6 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
             // Формируем исходный S-список на основе P-списка (сортируем эл-ты сначала по Size, затем по Pointer)
             s_list_initial = utils::SListFromPList( p_list_initial );
 
-            std::string empty_RegP_str = std::string( utils::to_string( p_list_initial[0] ).size(), ' ' );
-            std::string empty_RegS_str = std::string( "[" ) + std::string( utils::to_string( s_list_initial[0] ).size() - 2, '-' ) + std::string( "]" );
-
             // Формируем вставки. Участков для вставки: "regNum + 1" - в начало, в конец и между регионами списка.
             CELL* start = Ins_complex::mem;
             CELL* stop = Ins_complex::regPtrs[0];
@@ -1258,9 +1284,9 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                 std::vector<Region_P> insertions;       // Вставки на данном участке
                 size_t insertPosNum = stop - start;     // Число позиций для вставки на участке
 
-                for (size_t p = 0; p < insertPosNum; ++p) { // Перебор всех позиций участка
+                for (size_t p = 0; p < insertPosNum; ++p) {             // Перебор всех позиций участка
                     for (size_t s = 1; s <= insertPosNum - p; ++s) {    // Перебор возможных size вставки
-                        insertions.push_back( { start + p, s } );   // Генерим вставку
+                        insertions.push_back( { start + p, s } );       // Генерим вставку
                     }
                 }
                 // Перебор состояний LR-полей списка (L0R0, L0R1, L1R0, L1R1)
@@ -1296,7 +1322,6 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                                 right->size += reg.size;
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, utils::RegionPtoS( *right ) );
                                 Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, del_1_side, Side_NONE );
-
                                 std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::Start_P1_Adj_R];
                                 std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
@@ -1307,7 +1332,6 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                                 p_list_resulted.insert( p_list_resulted.begin(), reg );
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, { reg.start, reg.size, 0 } );
                                 Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, Side_NONE, Side_NONE );
-
                                 std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::Start_P1_Adj_None];
                                 std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
@@ -1325,7 +1349,6 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                                 left->size += reg.size;
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, utils::RegionPtoS( *left ) );
                                 Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, del_1_side, Side_NONE );
-
                                 std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P5_Finish_Adj_L];
                                 std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
@@ -1336,7 +1359,6 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                                 p_list_resulted.insert( p_list_resulted.end(), reg );
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, { reg.start, reg.size, 0 } );
                                 Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, Side_NONE, Side_NONE );
-
                                 std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P5_Finish_Adj_None];
                                 std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
@@ -1355,18 +1377,15 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                                 case InsertionPlace::P3_P4: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P3_P4_Adj_RL]; break; } // |  [0]   [1]   [2]###[3]   [4]  |
                                 case InsertionPlace::P4_P5: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P4_P5_Adj_RL]; break; } // |  [0]   [1]   [2]   [3]###[4]  |
                                 }
-
                                 to_del_1 = utils::RegionPtoS( *left );
                                 to_del_2 = utils::RegionPtoS( *right );
                                 left->size += reg.size + right->size;
                                 to_ins = utils::RegionPtoS( *left );
                                 p_list_resulted.erase( p_list_resulted.begin() + i );
-
                                 Side del_1_side = utils::DeleteRegion<RegionP, CELL>( s_list_resulted, to_del_1 );
                                 Side del_2_side = utils::DeleteRegion<RegionP, CELL>( s_list_resulted, to_del_2 );
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, to_ins );
                                 Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, del_1_side, del_2_side );
-
                                 std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
                                 tdata.s_listContent_resulted = utils::SListFromPList( p_list_resulted );
@@ -1383,7 +1402,6 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                                 left->size += reg.size;
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, utils::RegionPtoS( *left ) );
                                 Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, del_1_side, Side_NONE );
-
                                 std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
                                 tdata.s_listContent_resulted = utils::SListFromPList( p_list_resulted );
@@ -1399,7 +1417,6 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                                 p_list_resulted.insert( p_list_resulted.begin() + i, reg );
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, utils::RegionPtoS( reg ) );
                                 Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, Side_NONE, Side_NONE );
-
                                 std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
                                 tdata.s_listContent_resulted = utils::SListFromPList( p_list_resulted );
@@ -1463,10 +1480,11 @@ void log_transactions( std::list<std::pair<std::vector<TestData>, std::vector<Te
 
 
 template<class ListType>
-inline void rl_manip::SetState( const ListState& state, RegionsListPtr regList, Error_BasePtr& err )
+inline Error_BasePtr rl_manip::SetState( const ListState& state, RegionsListPtr regList )
 {
     // Проверяем, что устанавливаемое состояние - корректно
-    rl_check::Validate_ListState( state, err );                                         TRACE_RETURN_VOID( err, "Can't pass ListState validation for the state to be set" );
+    Error_BasePtr err = nullptr;
+    std::tie(err, std::ignore) = rl_check::Validate_ListState( state );                 TRACE_PARAM_RET_ERR( err, 1, "ListState &state", "State passing ListState validation", "Incorrect state" );
 
     if constexpr (std::is_same_v<ListType, Region_P>)
     {
@@ -1507,13 +1525,14 @@ inline void rl_manip::SetState( const ListState& state, RegionsListPtr regList, 
         regList->m_s_list_end = regList->m_s_list_begin + state.size;
     }
     else {
-        err = std::make_shared<Error_Custom>( "Undefined ListType received: " + std::string( typeid(ListType).name() ), PLACE(), "Log.txt" );
+        return ERR_CUSTOM( "Undefined ListType received: " + std::string( typeid( ListType ).name() ) );
     }
+    return nullptr;
 }
 
 
 template<class ListType>
-inline void rl_manip::SetContent( const std::vector<ListType>& content, RegionsListPtr regList, Error_BasePtr& err )
+inline Error_BasePtr rl_manip::SetContent( const std::vector<ListType>& content, RegionsListPtr regList )
 {
     ListType* it;
     ListType* end;
@@ -1527,23 +1546,19 @@ inline void rl_manip::SetContent( const std::vector<ListType>& content, RegionsL
         end = regList->m_s_list_end;
     }
     else {
-        err = std::make_shared<Error_Custom>( "Undefined ListType received: " + std::string( typeid(ListType).name() ), PLACE(), "Log.txt" );
-        return;
+        return ERR_CUSTOM( "Undefined ListType received: " + std::string( typeid( ListType ).name() ) );
     }
     if (it > end) {
-        err = std::make_shared<Error_Custom>( "List's iterators are in incorrect state (begin > end)", PLACE(), "Log.txt" );
-        return;
+        return ERR_CUSTOM( "List's iterators are in incorrect state (begin > end)" );
     }
     if (content.size() != end - it) {
-        err = std::make_shared<Error_Custom>(
-            "Size of vector to be set must match exactly with List size is set [begin ... end].\nSize of content to be set is: " +
-            std::to_string( content.size() ) + "\n" + std::string( typeid(ListType).name() ) + "-List size is: " + std::to_string( end - it ), PLACE(), "Log.txt" );
-        return;
+        return ERR_CUSTOM( "Size of vector to be set must match with List size is set.\nSize of vector: " + std::to_string( content.size() ) + "\nList size is: " + std::to_string( end - it ) );
     }
     size_t pos = 0;
     for (; it != end; ++it, ++pos) {
         *it = content[pos];
     }
+    return nullptr;
 }
 
 
@@ -1604,7 +1619,7 @@ inline ListFootprints rl_manip::GetFootprints( RegionsListPtr regList )
 
 
 template<class ListType>
-inline std::vector<ListType> rl_manip::GetContent( RegionsListPtr regList, Error_BasePtr& err )
+inline std::tuple<Error_BasePtr, std::vector<ListType>> rl_manip::GetContent( RegionsListPtr regList )
 {
     std::vector<ListType> out;
     ListType* it;
@@ -1619,21 +1634,19 @@ inline std::vector<ListType> rl_manip::GetContent( RegionsListPtr regList, Error
         end = regList->m_s_list_end;
     }
     else {
-        err = std::make_shared<Error_Custom>( "Undefined ListType received: " + std::string( typeid(ListType).name() ), PLACE(), "Log.txt" );
-        return std::vector<ListType>();
+        return std::tuple<Error_BasePtr, std::vector<ListType>>( ERR_CUSTOM( "Undefined ListType received: " + std::string( typeid( ListType ).name())), {} );
     }
     if (it > end) {
-        err = std::make_shared<Error_Custom>( "List iterators are in a wrong state (begin > end)", PLACE(), "Log.txt" );
-        return out;
+        return std::tuple<Error_BasePtr, std::vector<ListType>>( ERR_CUSTOM( "List iterators are in a wrong state (begin > end)"), {} );
     }
     for (; it != end; ++it) {
         out.push_back( *it );
     }
-    return out;
+    return std::tuple( nullptr, out );
 }
 
 
-void rl_manip::GetRegionsListDetails( RegionsListPtr regList, TestData &td, Error_BasePtr& err, bool to_resulted )
+Error_BasePtr rl_manip::GetRegionsListDetails( RegionsListPtr regList, TestData &td, bool to_resulted )
 {
     auto &p_state_target = to_resulted ? td.p_listState_resulted : td.p_listState_initial;
     auto &s_state_target = to_resulted ? td.s_listState_resulted : td.s_listState_initial;
@@ -1641,22 +1654,25 @@ void rl_manip::GetRegionsListDetails( RegionsListPtr regList, TestData &td, Erro
     auto &s_content_target = to_resulted ? td.s_listContent_resulted : td.s_listContent_initial;
     p_state_target = GetState<Region_P>( regList );
     s_state_target = GetState<Region_S>( regList );
-    p_content_target = GetContent<Region_P>( regList, err );                            TRACE_RETURN_VOID( err, "Can't get P-List content" );
-    s_content_target = GetContent<Region_S>( regList, err );                            TRACE_RETURN_VOID( err, "Can't get S-List content" );
+    Error_BasePtr err;
+    std::tie( err, p_content_target ) = GetContent<Region_P>( regList );                                                                TRACE_CUSTOM_RET_ERR( err, "Can't get P-List content" );
+    std::tie( err, s_content_target ) = GetContent<Region_S>( regList );                                                                TRACE_CUSTOM_RET_ERR( err, "Can't get S-List content" );
+    return nullptr;
 }
 
 
-void rl_manip::SetupRegionsList( RegionsListPtr regList, const TestData& settings, Error_BasePtr& err, bool settings_from_initial )
+Error_BasePtr rl_manip::SetupRegionsList( RegionsListPtr regList, const TestData& settings, bool settings_from_initial )
 {
-    SetState<Region_P>( settings_from_initial ? settings.p_listState_initial : settings.p_listState_resulted, regList, err );           TRACE_RETURN_VOID( err, "Can't set P-List state");
-    SetState<Region_S>( settings_from_initial ? settings.s_listState_initial : settings.s_listState_resulted, regList, err );           TRACE_RETURN_VOID( err, "Can't set S-List state");
-    SetContent<Region_P>( settings_from_initial ? settings.p_listContent_initial : settings.p_listContent_resulted, regList, err );     TRACE_RETURN_VOID( err, "Can't set P-List content");
-    SetContent<Region_S>( settings_from_initial ? settings.s_listContent_initial : settings.s_listContent_resulted, regList, err );     TRACE_RETURN_VOID( err, "Can't set S-List content");
-
+    Error_BasePtr err;
+    err = SetState<Region_P>( settings_from_initial ? settings.p_listState_initial : settings.p_listState_resulted, regList );          TRACE_CUSTOM_RET_ERR( err, "Can't set P-List state");
+    err = SetState<Region_S>( settings_from_initial ? settings.s_listState_initial : settings.s_listState_resulted, regList );          TRACE_CUSTOM_RET_ERR( err, "Can't set S-List state");
+    err = SetContent<Region_P>( settings_from_initial ? settings.p_listContent_initial : settings.p_listContent_resulted, regList );    TRACE_CUSTOM_RET_ERR( err, "Can't set P-List content");
+    err = SetContent<Region_S>( settings_from_initial ? settings.s_listContent_initial : settings.s_listContent_resulted, regList );    TRACE_CUSTOM_RET_ERR( err, "Can't set S-List content");
+    return nullptr;
 }
 
 
-void rl_check::CheckMarginsPurity( RegionsListPtr regList, Error_BasePtr& err )
+Error_BasePtr rl_check::CheckMarginsPurity( RegionsListPtr regList )
 {
     ListFootprints plist_footpr = rl_manip::GetFootprints<Region_P>( regList );
     ListFootprints slist_footpr = rl_manip::GetFootprints<Region_S>( regList );
@@ -1675,71 +1691,68 @@ void rl_check::CheckMarginsPurity( RegionsListPtr regList, Error_BasePtr& err )
 
     for (auto it = p_list_start; it != p_list_mar_l; ++it) {
         if (*it != Region_P{ 0 }) {
-            err = std::make_shared<Error_Custom>( "P-List Left margin isn't clean", PLACE(), "Log.txt" );
-            return;
+            return ERR_CUSTOM( "P-List Left margin isn't clean" );
         }
     }
     for (auto it = p_list_mar_r; it != p_list_stop; ++it) {
         if (*it != Region_P{ 0 }) {
-            err = std::make_shared<Error_Custom>( "P-List Right margin isn't clean", PLACE(), "Log.txt" );
-            return;
+            return ERR_CUSTOM( "P-List Right margin isn't clean" );
         }
     }
     for (auto it = s_list_start; it != s_list_mar_l; ++it) {
         if (*it != Region_S{ 0 }) {
-            err = std::make_shared<Error_Custom>( "S-List Left margin isn't clean", PLACE(), "Log.txt" );
-            return;
+            return ERR_CUSTOM( "S-List Left margin isn't clean" );
         }
     }
     for (auto it = s_list_mar_r; it != s_list_stop; ++it) {
         if (*it != Region_S{ 0 }) {
-            err = std::make_shared<Error_Custom>( "S-List Right margin isn't clean", PLACE(), "Log.txt" );
-            return;
+            return ERR_CUSTOM( "S-List Right margin isn't clean" );
         }
     }
+    return nullptr;
 }
 
 
-void rl_check::CheckListsCompliance( const std::vector<Region_P>& p_vec, const std::vector<Region_S>& s_vec, Error_BasePtr& err )
+Error_BasePtr rl_check::CheckListsCompliance( const std::vector<Region_P>& p_vec, const std::vector<Region_S>& s_vec )
 {
-    std::vector<Region_S> s_list = utils::SListFromPList( p_vec );
-
-    if (s_list != s_vec) {
-        err = std::make_shared<Error_Custom>( "P- and S-Lists are not equivalent:\nP: " + utils::to_string( p_vec ) + "\nS: " + utils::to_string( s_vec ), PLACE(), "Log.txt" );
+    if ( utils::SListFromPList( p_vec ) != s_vec) {
+        return ERR_CUSTOM( "P- and S-Lists are not equivalent:\nP: " + utils::to_string( p_vec ) + "\nS: " + utils::to_string( s_vec ));
     }
+    return nullptr;
 }
 
 
-ListState rl_check::Validate_ListState( const ListState& state, Error_BasePtr& err )
+std::tuple<Error_BasePtr, ListState> rl_check::Validate_ListState( const ListState &state )
 {
     std::string errMess( "Wrong relations:\n" );
     bool ok = true;
-    if (state.capacity < state.size) {
+    Error_BasePtr err = nullptr;
+    if( state.capacity < state.size ) {
         errMess += "ListState.capacity < ListState.size\n";
         ok = false;
     }
-    if (state.spaceLeft + state.spaceRight + state.size != state.capacity) {
+    if( state.spaceLeft + state.spaceRight + state.size != state.capacity ) {
         errMess += "ListState.spaceLeft + ListState.spaceRight + ListState.size != ListState.capacity\n";
         ok = false;
     }
-    if (state.begin_pos != state.spaceLeft) {
+    if( state.begin_pos != state.spaceLeft ) {
         errMess += "ListState.begin_pos != ListState.spaceLeft\n";
         ok = false;
     }
-    if (state.end_pos != state.spaceLeft + state.size) {
+    if( state.end_pos != state.spaceLeft + state.size ) {
         errMess += "ListState.end_pos != ListState.spaceLeft + ListState.size\n";
         ok = false;
     }
-    if (!ok) {
+    if( !ok ) {
         errMess += "Details:\n" + utils::to_string( state );
-        err = std::make_shared<Error_Custom>( errMess, PLACE(), "Log.txt" );
+        err = ERR_CUSTOM( errMess );
     }
-    return state;
+    return std::tuple( err, state );
 }
 
 
 template<class ListType>
-void rl_check::CheckFootprintsVsState( const ListState& state, const ListFootprints& footpr, Error_BasePtr& err )
+Error_BasePtr rl_check::CheckFootprintsVsState( const ListState& state, const ListFootprints& footpr )
 {
     std::string errMess( "Wrong relations:\n" );
     bool ok = true;
@@ -1762,27 +1775,26 @@ void rl_check::CheckFootprintsVsState( const ListState& state, const ListFootpri
     }
     if (!ok) {
         errMess += "Details:\nState:   " + utils::to_string( state ) + "\nContent: " + utils::to_string( footpr );
-        err = std::make_shared<Error_Custom>( errMess, PLACE(), "Log.txt" );
+        return ERR_CUSTOM( errMess );
     }
+    return nullptr;
 }
 
 
-bool rl_check::CheckState( const ListState& expected, const ListState& gained, Error_BasePtr& err )
+Error_BasePtr rl_check::CheckState( const ListState &expected, const ListState &gained )
 {
-    if (expected != gained) {
-        err = std::make_shared<Error_Custom>( "Expected:\n" + utils::to_string( expected ) + "\nGained:\n" + utils::to_string( gained ), PLACE(), "Log.txt" );
-        return false;
+    if( expected != gained ) {
+        return ERR_CUSTOM( "Expected:\n" + utils::to_string( expected ) + "\nGained:\n" + utils::to_string( gained ));
     }
-    return true;
+    return nullptr;
 }
 
 
 template<class ListType>
-bool rl_check::CheckContent( const std::vector<ListType>& expected, std::vector<ListType>& gained, Error_BasePtr& err )
+Error_BasePtr rl_check::CheckContent( const std::vector<ListType>& expected, std::vector<ListType>& gained )
 {
     if (expected.size() != gained.size()) {
-        err = std::make_shared<Error_Custom>( "Expected size: " + std::to_string( expected.size() ) + "\nGained size: " + std::to_string( gained.size() ), PLACE(), "Log.txt" );
-        return false;
+        return ERR_CUSTOM( "Expected size: " + std::to_string( expected.size() ) + "\nGained size: " + std::to_string( gained.size()));
     }
     if constexpr (std::is_same_v<ListType, Region_P> || std::is_same_v<ListType, Region_S>)
     {
@@ -1791,65 +1803,67 @@ bool rl_check::CheckContent( const std::vector<ListType>& expected, std::vector<
             ok &= expected[i] == gained[i];
         }
         if (!ok) {
-            err = std::make_shared<Error_Custom>( "Expected content: " + utils::to_string( expected ) + "\nGained content:   " + utils::to_string( gained ), PLACE(), "Log.txt" );
+            return ERR_CUSTOM( "Expected content: " + utils::to_string( expected ) + "\nGained content:   " + utils::to_string( gained ));
         }
-        return ok;
+        return nullptr;
     }
     else {
-        err = std::make_shared<Error_Custom>( "Undefined ListType received: " + std::string( typeid(ListType).name() ), PLACE(), "Log.txt" );
-        return false;
+        return ERR_CUSTOM( "Undefined ListType received: " + std::string( typeid(ListType).name()));
     }
 }
 
 
 template<class ListType>
-void rl_check::CheckIfContentOutOfBounds( const std::vector<ListType>& content, Region_P bounds, Error_BasePtr& err )
+Error_BasePtr rl_check::CheckIfContentOutOfBounds( const std::vector<ListType>& content, Region_P bounds )
 {
     if constexpr (std::is_same_v<ListType, Region_P> || std::is_same_v<ListType, Region_S>)
     {
         std::string errMess;
         for (const auto& reg : content) {
             if (reg.start < bounds.start || reg.start + reg.size > bounds.start + bounds.size) {
-                err = std::make_shared<Error_Custom>(
-                    "Bounds:    " + utils::to_string( bounds ) + "\nRegion:    " + utils::to_string( reg ) + "\nCell size: " + std::to_string(sizeof(CELL)) + " Bytes\nContent:   " + utils::to_string( content ), PLACE(), "Log.txt" );
-                break;
+                return ERR_CUSTOM( "Bounds:    " + utils::to_string( bounds ) + "\nRegion:    " + utils::to_string( reg ) + 
+                                   "\nCell size: " + std::to_string(sizeof(CELL)) + " Bytes\nContent:   " + utils::to_string( content ));
             }
         }
+        return nullptr;
     }
     else {
-        err = std::make_shared<Error_Custom>( "Undefined ListType received: " + std::string( typeid(ListType).name() ), PLACE(), "Log.txt" );
-        return false;
+        return ERR_CUSTOM( "Undefined ListType received: " + std::string( typeid(ListType).name()));
     }
 }
 
 
-void rl_check::CheckRegionsList( RegionsListPtr regList, const TestData& expected, Error_BasePtr& err, bool check_state, bool check_content, bool check_bounds, bool check_resulted )
+Error_BasePtr rl_check::CheckRegionsList( RegionsListPtr regList, const TestData& expected, bool check_state, bool check_content, bool check_bounds, bool check_resulted )
 {
-    rl_check::CheckMarginsPurity( regList, err );                                                                                                   TRACE_RETURN_VOID( err, "Margins are not clean" );
-    auto P_Content = rl_manip::GetContent<Region_P>( regList, err );                                                                                TRACE_RETURN_VOID( err, "Can't get P-List content" );
-    auto S_Content = rl_manip::GetContent<Region_S>( regList, err );                                                                                TRACE_RETURN_VOID( err, "Can't get S-List content" );
-    rl_check::CheckListsCompliance( P_Content, S_Content, err );                                                                                    TRACE_RETURN_VOID( err, "Lists compliance error" );
-    ListState P_State = rl_check::Validate_ListState( rl_manip::GetState<Region_P>( regList ), err );                                               TRACE_RETURN_VOID( err, "Incorrect P-State gained" );
-    ListState S_State = rl_check::Validate_ListState( rl_manip::GetState<Region_S>( regList ), err );                                               TRACE_RETURN_VOID( err, "Incorrect S-State gained" );
-    rl_check::CheckFootprintsVsState<Region_P>( P_State, rl_manip::GetFootprints<Region_P>( regList ), err );                                       TRACE_RETURN_VOID( err, "Incorrect P-State/P-Footprints combo gained" );
-    rl_check::CheckFootprintsVsState<Region_S>( S_State, rl_manip::GetFootprints<Region_S>( regList ), err );                                       TRACE_RETURN_VOID( err, "Incorrect S-State/S-Footprints combo gained" );
+    Error_BasePtr err = rl_check::CheckMarginsPurity( regList );                                                                                        TRACE_CUSTOM_RET_ERR( err, "Margins are not clean" );
+    std::vector<Region_P> P_Content;
+    std::vector<Region_S> S_Content;
+    std::tie( err, P_Content ) = rl_manip::GetContent<Region_P>( regList );                                                                             TRACE_CUSTOM_RET_ERR( err, "Can't get P-List content" );
+    std::tie( err, S_Content ) = rl_manip::GetContent<Region_S>( regList );                                                                             TRACE_CUSTOM_RET_ERR( err, "Can't get S-List content" );
+    err = rl_check::CheckListsCompliance( P_Content, S_Content );                                                                                       TRACE_CUSTOM_RET_ERR( err, "Lists compliance error" );
+    ListState P_State, S_State;
+    std::tie( err, P_State ) = rl_check::Validate_ListState( rl_manip::GetState<Region_P>( regList ));                                                  TRACE_CUSTOM_RET_ERR( err, "Incorrect P-State gained" );
+    std::tie( err, S_State ) = rl_check::Validate_ListState( rl_manip::GetState<Region_S>( regList ));                                                  TRACE_CUSTOM_RET_ERR( err, "Incorrect S-State gained" );
+    err = rl_check::CheckFootprintsVsState<Region_P>( P_State, rl_manip::GetFootprints<Region_P>( regList ));                                           TRACE_CUSTOM_RET_ERR( err, "Incorrect P-State/P-Footprints combo gained" );
+    err = rl_check::CheckFootprintsVsState<Region_S>( S_State, rl_manip::GetFootprints<Region_S>( regList ));                                           TRACE_CUSTOM_RET_ERR( err, "Incorrect S-State/S-Footprints combo gained" );
 
     if (check_state) {
-        rl_check::CheckState( check_resulted ? expected.p_listState_resulted : expected.p_listState_initial, P_State, err );                        TRACE_RETURN_VOID( err, "Unexpected P-State gained" );
-        rl_check::CheckState( check_resulted ? expected.s_listState_resulted : expected.s_listState_initial, S_State, err );                        TRACE_RETURN_VOID( err, "Unexpected S-State gained" );
+        err = rl_check::CheckState( check_resulted ? expected.p_listState_resulted : expected.p_listState_initial, P_State );                           TRACE_CUSTOM_RET_ERR( err, "Unexpected P-State gained" );
+        err = rl_check::CheckState( check_resulted ? expected.s_listState_resulted : expected.s_listState_initial, S_State );                           TRACE_CUSTOM_RET_ERR( err, "Unexpected S-State gained" );
     }
     if (check_content) {
-        rl_check::CheckContent<Region_P>( check_resulted ? expected.p_listContent_resulted : expected.p_listContent_initial, P_Content, err );      TRACE_RETURN_VOID( err, "Unexpected P-List content gained" );
-        rl_check::CheckContent<Region_S>( check_resulted ? expected.s_listContent_resulted : expected.s_listContent_initial, S_Content, err );      TRACE_RETURN_VOID( err, "Unexpected S-List content gained" );
+        err = rl_check::CheckContent<Region_P>( check_resulted ? expected.p_listContent_resulted : expected.p_listContent_initial, P_Content );         TRACE_CUSTOM_RET_ERR( err, "Unexpected P-List content gained" );
+        err = rl_check::CheckContent<Region_S>( check_resulted ? expected.s_listContent_resulted : expected.s_listContent_initial, S_Content );         TRACE_CUSTOM_RET_ERR( err, "Unexpected S-List content gained" );
     }
     if (check_bounds) {
-        rl_check::CheckIfContentOutOfBounds<Region_P>( P_Content, expected.intermediate_reg, err );                                                 TRACE_RETURN_VOID( err, "Element from P-List is out of bounds" );
-        rl_check::CheckIfContentOutOfBounds<Region_S>( S_Content, expected.intermediate_reg, err );                                                 TRACE_RETURN_VOID( err, "Element from S-List is out of bounds" );
+        err = rl_check::CheckIfContentOutOfBounds<Region_P>( P_Content, expected.intermediate_reg );                                                    TRACE_CUSTOM_RET_ERR( err, "Element from P-List is out of bounds" );
+        err = rl_check::CheckIfContentOutOfBounds<Region_S>( S_Content, expected.intermediate_reg );                                                    TRACE_CUSTOM_RET_ERR( err, "Element from S-List is out of bounds" );
     }
+    return nullptr;
 }
 
 
-TestData rl_check::CheckRegionsListInitialization( RegionsListPtr checkedRegList, size_t init_capacity, const Region_P& init_region, const Region_P& bounds, Error_BasePtr& err )
+std::tuple<Error_BasePtr, TestData> rl_check::Check_RegList_Init( RegionsListPtr checkedRegList, size_t init_capacity, const Region_P& init_region, const Region_P& bounds )
 {
     // Проверяем состояние пустого RegionsList определённой ёмкости
     TestData td = { 0 };
@@ -1861,10 +1875,10 @@ TestData rl_check::CheckRegionsListInitialization( RegionsListPtr checkedRegList
     td.p_listState_resulted.end_pos = td.p_listState_resulted.begin_pos;
     td.s_listState_resulted = td.p_listState_resulted;
 
-    rl_check::CheckRegionsList( checkedRegList, td, err );                              TRACE_RETURN( err, "RegionsList is broken after creation", td );
+    Error_BasePtr err = rl_check::CheckRegionsList( checkedRegList, td );               TRACE_CUSTOM_RET_VAL( err, std::tuple(err, td), "RegionsList is broken after creation" );
 
     // Инициализирующая вставка
-    err = checkedRegList->ReleaseRegion( init_region );                                 TRACE_RETURN( err, "Error during RegionsList initial insertion", td );
+    err = checkedRegList->ReleaseRegion( init_region );                                 TRACE_CUSTOM_RET_VAL( err, std::tuple( err, td ), "Error during RegionsList initial insertion" );
 
     // Проверяем корректность RegionsList после инициализирующей вставки
     td.p_listState_resulted.size++;
@@ -1877,6 +1891,6 @@ TestData rl_check::CheckRegionsListInitialization( RegionsListPtr checkedRegList
     td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
     td.intermediate_reg = bounds;
 
-    rl_check::CheckRegionsList( checkedRegList, td, err );                              TRACE_RETURN( err, "RegionsList is broken after initial insertion", td );
-    return td;
+    err = rl_check::CheckRegionsList( checkedRegList, td );                             TRACE_CUSTOM_RET_VAL( err, std::tuple(err, td), "RegionsList is broken after initial insertion" );
+    return std::tuple(nullptr, td);
 }

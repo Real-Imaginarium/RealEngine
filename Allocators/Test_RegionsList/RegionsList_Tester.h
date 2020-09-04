@@ -14,6 +14,7 @@ using Region_S = RegionS<CELL>;
 using RegionsListPtr = std::shared_ptr<RegionsList<CELL>>;
 
 struct TestData;
+struct ConfigGIR;
 
 class RegionsList_Tester
 {
@@ -67,7 +68,7 @@ public:
     void Test_InsertionsComplex();
 
     // Проверяет случайно многократные захват/вставку из/в RegionsList
-    void Test_GrabbingsInsertionsRandom();
+    void Test_GrabbingsInsertionsRandom( const ConfigGIR &conf );
 
 private:
     void GenerateInsertionsComplex( std::vector<std::tuple<std::string, TestData>> *out_releases );
@@ -80,10 +81,10 @@ class rl_manip
 {
 public:
     template<class ListType>
-    static void SetState( const ListState& state, RegionsListPtr regList, Error_BasePtr& err );
+    static Error_BasePtr SetState( const ListState& state, RegionsListPtr regList );
 
     template<class ListType>
-    static void SetContent( const std::vector<ListType>& content, RegionsListPtr regList, Error_BasePtr& err );
+    static Error_BasePtr SetContent( const std::vector<ListType>& content, RegionsListPtr regList );
 
     template<class ListType>
     static ListState GetState( RegionsListPtr regList );
@@ -92,37 +93,37 @@ public:
     static ListFootprints GetFootprints( RegionsListPtr regList );
 
     template<class ListType>
-    static std::vector<ListType> GetContent( RegionsListPtr regList, Error_BasePtr& err );
+    static std::tuple<Error_BasePtr, std::vector<ListType>> GetContent( RegionsListPtr regList );
 
-    static void GetRegionsListDetails( RegionsListPtr regList, TestData& td, Error_BasePtr& err, bool to_resulted = true );
+    static Error_BasePtr GetRegionsListDetails( RegionsListPtr regList, TestData& td, bool to_resulted = true );
 
-    static void SetupRegionsList( RegionsListPtr regList, const TestData& settings, Error_BasePtr& err, bool settings_from_initial = true );
+    static Error_BasePtr SetupRegionsList( RegionsListPtr regList, const TestData& settings, bool settings_from_initial = true );
 };
 
 
 class rl_check
 {
 public:
-    static void CheckMarginsPurity( RegionsListPtr regList, Error_BasePtr& err );
+    static Error_BasePtr CheckMarginsPurity( RegionsListPtr regList );
 
-    static void CheckListsCompliance( const std::vector<Region_P>& p_vec, const std::vector<Region_S>& s_vec, Error_BasePtr& err );
+    static Error_BasePtr CheckListsCompliance( const std::vector<Region_P>& p_vec, const std::vector<Region_S>& s_vec );
 
-    static ListState Validate_ListState( const ListState& state, Error_BasePtr& err );
-
-    template<class ListType>
-    static void CheckFootprintsVsState( const ListState& state, const ListFootprints& footpr, Error_BasePtr& err );
-
-    static bool CheckState( const ListState& expected, const ListState& gained, Error_BasePtr& err );
+    static std::tuple<Error_BasePtr, ListState> Validate_ListState( const ListState& state );
 
     template<class ListType>
-    static bool CheckContent( const std::vector<ListType>& expected, std::vector<ListType>& gained, Error_BasePtr& err );
+    static Error_BasePtr CheckFootprintsVsState( const ListState& state, const ListFootprints& footpr );
+
+    static Error_BasePtr CheckState( const ListState& expected, const ListState& gained );
 
     template<class ListType>
-    static void CheckIfContentOutOfBounds( const std::vector<ListType>& content, Region_P bounds, Error_BasePtr& err );
+    static Error_BasePtr CheckContent( const std::vector<ListType>& expected, std::vector<ListType>& gained );
 
-    static void CheckRegionsList( RegionsListPtr regList, const TestData& expected, Error_BasePtr &err, bool check_state = true, bool check_content = true, bool check_bounds = true, bool check_resulted = true );
+    template<class ListType>
+    static Error_BasePtr CheckIfContentOutOfBounds( const std::vector<ListType>& content, Region_P bounds );
 
-    static TestData CheckRegionsListInitialization( RegionsListPtr checkedRegList, size_t init_capacity, const Region_P& init_region, const Region_P& bounds, Error_BasePtr& err );
+    static Error_BasePtr CheckRegionsList( RegionsListPtr regList, const TestData& expected, bool check_state = true, bool check_content = true, bool check_bounds = true, bool check_resulted = true );
+
+    static std::tuple<Error_BasePtr, TestData> Check_RegList_Init( RegionsListPtr checkedRegList, size_t init_capacity, const Region_P& init_region, const Region_P& bounds );
 
 };
 
@@ -172,4 +173,13 @@ struct TestData
             std::string( tab, ' ' ) + "S-Content Initial: " + utils::to_string( s_listContent_initial ) + "\n" +
             std::string( tab, ' ' ) + "         Resulted: " + utils::to_string( s_listContent_resulted );
     }
+};
+
+
+struct ConfigGIR
+{
+    size_t transactions;    // 10000 10000 10000 10000 10000 10000 10000 10000 100000
+    size_t mem_pitch_size;  // 100   100   100   100   100   100   100   100   100000
+    size_t min_grab_size;   // 0     0     1     99    101   100   100   0     0
+    size_t max_grab_size;   // 0     1     1     100   101   101   100   100   150000
 };
