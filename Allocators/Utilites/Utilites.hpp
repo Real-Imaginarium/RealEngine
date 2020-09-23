@@ -163,7 +163,7 @@ size_t lower_bound( RegionP<T>* arr, size_t size, const T* value, bool& founded 
             l = mid + 1;
         }
     }
-    founded = (arr[l].start == value);
+    founded = (l < size) && (arr[l].start == value);
     return l;
 }
 
@@ -184,7 +184,7 @@ size_t lower_bound( RegionS<T>* arr, size_t size, size_t value, bool& founded )
             l = mid + 1;
         }
     }
-    founded = (arr[l].size == value);
+    founded = ( l < size ) && (arr[l].size == value);
     return l;
 }
 
@@ -263,7 +263,7 @@ size_t upper_bound( RegionP<T>* arr, size_t size, T* value, bool& founded ) {
             h = mid;
         }
     }
-    founded = (arr[l].start == value);
+    founded = ( l < size ) && (arr[l].start == value);
     return l;
 }
 
@@ -282,7 +282,7 @@ size_t upper_bound( RegionP<T>* arr, size_t size, size_t value, bool& founded ) 
             h = mid;
         }
     }
-    founded = (arr[l].size == value);
+    founded = ( l < size ) && (arr[l].size == value);
     return l;
 }
 

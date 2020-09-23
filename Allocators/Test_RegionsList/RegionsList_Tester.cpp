@@ -23,9 +23,10 @@
 #include <typeinfo>
 
 
-using Ins_complex =    Globals::Ins_complex;
-using InsertionPlace = Globals::Ins_complex::InsertionPlace;
-using FieldState =     Globals::Ins_complex::FieldState;
+using InsertionsComplex = Globals::InsertionsComplex;
+using ReorganizeComplex = Globals::ReorganizeComplex;
+using InsertionPlace =    Globals::InsertionsComplex::InsertionPlace;
+using FieldState =        Globals::InsertionsComplex::FieldState;
 
 using namespace std::filesystem;
 
@@ -290,74 +291,84 @@ void RegionsList_Tester::Test_GrabbingTooBigRegion()
 }
 
 
-// Проверяет работу RegionsList при расширении списков (ExpandList)
-void RegionsList_Tester::Test_ListsExpanding()
+// Проверяет работу RegionsList при расширении списков (ReorganizeList)
+void RegionsList_Tester::Test_ListsReorganise()
 {
-    Log::test( "Log.txt" ) << LogTest::Start{ "Test Lists Expanding", 1 };
+    Log::test( "Log.txt" ) << LogTest::Start{ "Test Lists Reorganization", 1 };
 
     Error_BasePtr err = nullptr;
-    size_t regList_initCap = 0;
-    size_t pitch_size = 4000;
-    CELL* memoryPitch = new CELL[pitch_size];
+    Region_P bounds = { ReorganizeComplex::m, ReorganizeComplex::mem_size };
+    auto regList = std::make_shared<RegionsList<CELL>>( 0 );
+    TestData td;
 
-    auto regList = std::make_shared<RegionsList<CELL>>( regList_initCap );
-
-    // Формируем набор вставок
-    std::vector<Region_P> regs( 200 );
-    for (size_t i = 0; i < 200; ++i) {
-        regs[i] = Region_P{ memoryPitch + i * 10, 9 };
-    }
-
+    std::vector<std::pair<TestData, bool>> states;
     do {
-        // Проверяем корректность RegionsList после создания
-        TestData td = { 0 };
-        td.p_listState_resulted = { 3, 0, 1, 2, 1, 1 };
-        td.s_listState_resulted = { 3, 0, 1, 2, 1, 1 };
-        err = rl_check::CheckRegionsList( regList, td );            TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after creation" );
+        // Проверяем одиночные случаи реорганизации RegionsList
+        for( auto test_case : ReorganizeComplex::test_cases )
+        {
+            std::tie( td.p_listState_initial, td.p_listState_resulted, td.p_listContent_initial, td.p_listContent_resulted, td.intermediate_reg ) = test_case;
+            td.s_listState_initial = td.p_listState_initial;
+            td.s_listState_resulted = td.p_listState_resulted;
+            td.s_listContent_initial = utils::SListFromPList( td.p_listContent_initial );
+            td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
 
-        // Производим вставки с целью расширения P- и S-списков
-        std::string errMess = "Error during RegionsList insertion ";
-        err = regList->ReleaseRegion( regs[100] );                  TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(1) ); // [---] [#B#] [-E-]
-        err = regList->ReleaseRegion( regs[101] );                  TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(2) ); // [---] [#B#] [###] E
-        err = regList->ReleaseRegion( regs[102] );                  TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(3) ); // [---] [---] [#B#] [###] [###] [-E-]
-        err = regList->ReleaseRegion( regs[103] );                  TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(4) ); // [---] [---] [#B#] [###] [###] [###] E
-        err = regList->ReleaseRegion( regs[104] );                  TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(5) ); // [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [-E-] [---] [---]
+            // Устанавливаем RegionsList в исходное состояние, проверяем
+            err = rl_manip::SetupRegionsList( regList, td );                                            TRACE_CUSTOM_BRK( err, "RegionsList setting-up error" );
+            err = rl_check::CheckRegionsList( regList, td, true, true, false, false );                  TRACE_CUSTOM_BRK( err, "RegionsList is broken after setting-up" );
 
-        // Проверяем корерктность RegionsList после 5 вставок и 2 расширений вправо
-        td.p_listState_resulted = { 12, 5, 4, 3, 4, 9 };
-        td.s_listState_resulted = { 12, 5, 4, 3, 4, 9 };
-        td.p_listContent_resulted = { regs[100], regs[101], regs[102], regs[103], regs[104] };
-        td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
-        td.intermediate_reg = Region_P{ memoryPitch, pitch_size };
-        err = rl_check::CheckRegionsList( regList, td );             TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after 5 insertions (expanded right 2 times)" );
+            // Производим реорганизующую вставку
+            err = regList->ReleaseRegion( td.intermediate_reg );                                        TRACE_CUSTOM_BRK( err, "Error during reorganizing ReleaseRegion()" );
 
-        // Продолжаем расширять список вправо и влево (по одному разу)
-        int c = 6;
-        for (uint8_t i = 105; i < 109; ++i, ++c) {      // Расширяем вправо
-            err = regList->ReleaseRegion( regs[i] );                TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(c) );   // [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] E
-        }                                                                                                      // last iteration    [---] [---] [---] [---] [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] [#№#] [-E-] [---] [---] [---] [---] [---] [---]
-        for (uint8_t i = 109; i < 116; ++i, ++c) {      // Заполняем правое поле
-            err = regList->ReleaseRegion( regs[i] );                TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(c) );   // [---] [---] [---] [---] [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] [#№#] [###] [###] [###] [###] [###] [###] [###] E
+            // Проверяем реорганизованный RegionsList
+            td.intermediate_reg = bounds;
+            err = rl_check::CheckRegionsList( regList, td );                                            TRACE_CUSTOM_BRK( err, "RegionsList is broken after reorganization" );
         }
-        for (uint8_t i = 91; i < 100; ++i, ++c) {       // Расширяем влево
-            err = regList->ReleaseRegion( regs[i] );                TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(c) );   // [#B#] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [#№#] [###] [###] [###] [###] [###] [###] [###] E
-        }                                                                                                      // last iteration    [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [-E-] [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [---]
-        for (uint8_t i = 116; i < 128; ++i, ++c) {      // Заполняем правое поле
-            err = regList->ReleaseRegion( regs[i] );                TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(c) );   // [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [---] [#B#] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] E
-        }
-        for (uint8_t i = 80; i < 91; ++i, ++c) {        // Заполняем левое поле
-            err = regList->ReleaseRegion( regs[i] );                TRACE_CUSTOM_PRNT_CNT( err, errMess + std::to_string(c) );   // [#B#] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] [###] E
-        }
-        // Проверяем корерктность RegionsList после 43 вставок и 2 расширений (вправо и влево)
-        td.p_listState_resulted = { 48, 48, 0, 0, 0, 48 };
-        td.s_listState_resulted = { 48, 48, 0, 0, 0, 48 };
-        td.p_listContent_resulted = std::vector<Region_P>( regs.begin() + 80, regs.begin() + 128 );
-        td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
-        err = rl_check::CheckRegionsList( regList, td );            TRACE_CUSTOM_PRNT_CNT( err, "RegionsList is broken after 43 insertions (expanded 2 times to right and left)" );
+        TRACE_CUSTOM_CNT( err, "Single reorganization test-case failed" );
 
-    } while (0);
 
-    delete[] memoryPitch;
+        // Проверяем последовательность реорганизаций RegionsList
+        for( auto test_seq : ReorganizeComplex::test_sequences )
+        {
+            std::vector<std::tuple<Region_P, bool>> manipulations;
+            std::tie( td.p_listState_initial, td.p_listState_resulted, manipulations, td.p_listContent_resulted ) = test_seq;
+            td.s_listState_initial = td.p_listState_initial;
+            td.s_listState_resulted = td.p_listState_resulted;
+            td.p_listContent_initial = {};
+            td.s_listContent_initial = {};
+            td.s_listContent_resulted = utils::SListFromPList( td.p_listContent_resulted );
+            td.intermediate_reg = bounds;
+
+            // Устанавливаем RegionsList в исходное состояние, проверяем
+            err = rl_manip::SetupRegionsList( regList, td );                                            TRACE_CUSTOM_BRK( err, "RegionsList setting-up error" );
+            err = rl_check::CheckRegionsList( regList, td, true, true, true, false );                   TRACE_CUSTOM_BRK( err, "RegionsList is broken after setting-up" );
+
+            // Манипулируем RegionsList'ом, последовательно реорганизуя его
+            for( const auto manip : manipulations )
+            {
+                if( std::get<1>( manip ) ) {
+                    err = regList->ReleaseRegion( std::get<0>( manip ) );                               TRACE_CUSTOM_BRK( err, "Error during reorganizing ReleaseRegion()" );
+                    err = rl_check::CheckRegionsList( regList, td, false, false, false );               TRACE_CUSTOM_BRK( err, "RegionsList is broken after reorganizing ReleaseRegion()" );
+                }
+                else {
+                    CELL *p_out = nullptr;
+                    err = regList->GrabRegion( std::get<0>( manip ).size, &p_out );                     TRACE_CUSTOM_BRK( err, "Error during reorganizing GrabRegion()" );
+
+                    if( p_out != std::get<0>( manip ).start ) {
+                        err = ERR_CUSTOM( "Output pointer refers to unexpected memory address" );       TRACE_CUSTOM_BRK( err, "GrabRegion() Wrong behavior" );
+                    }
+                    err = rl_check::CheckRegionsList( regList, td, false, false, false );               TRACE_CUSTOM_BRK( err, "RegionsList is broken after reorganizing GrabRegion()" );
+                }
+            }
+            if( err )
+                break;
+
+            // Проверяем реорганизованный RegionsList
+            td.intermediate_reg = bounds;
+            err = rl_check::CheckRegionsList( regList, td );                                            TRACE_CUSTOM_BRK( err, "RegionsList is broken after reorganization" );
+        }
+        TRACE_CUSTOM_PRNT_CNT( err, "Multiple reorganizations test-sequence failed")
+    } while(0);
+
     Log::test( "Log.txt" ) << LogTest::Finished{ err == nullptr };
 }
 
@@ -376,7 +387,7 @@ void RegionsList_Tester::Test_InitialReleaseRegion()
 
     // Тестовые вставки
     Region_P initial_insertion = { memoryPitch, pitch_size };
-    auto res = rl_check::Check_RegList_Init( regList, regList_initCap, initial_insertion, bounds );                     TRACE_CUSTOM_PRNT( std::get<0>(res), "RegionsList initialization error" );
+    auto res = rl_check::Check_RegList_Init( regList, regList_initCap, initial_insertion, bounds );     TRACE_CUSTOM_PRNT( std::get<0>(res), "RegionsList initialization error" );
 
     delete[] memoryPitch;
     Log::test( "Log.txt" ) << LogTest::Finished{ std::get<0>( res ) == nullptr };
@@ -751,7 +762,7 @@ void RegionsList_Tester::Test_GrabbingsComplex()
 
                     // Костыль. TestData::intermediate_reg играет разную роль: для CheckRegionsList() это Bounds, для GenerateGrabsComplex() это запрашиваемая size и ожидаемый start при вызове GrabRegion().
                     Region_P req_size_exp_start = test_step.intermediate_reg;
-                    test_step.intermediate_reg = { Ins_complex::mem, (size_t)Ins_complex::Bounds::MEM_SIZE };       // Теперь в TestData::intermediate_reg записано значение Bounds 
+                    test_step.intermediate_reg = { InsertionsComplex::mem, (size_t)InsertionsComplex::Bounds::MEM_SIZE };       // Теперь в TestData::intermediate_reg записано значение Bounds 
 
                     std::shared_ptr<RegionsList<CELL>> tested_regList = std::make_unique<RegionsList<CELL>>( 0 );
 
@@ -825,7 +836,7 @@ void RegionsList_Tester::Test_InsertionsComplex()
                 [&errors, &error_write_mutex, &cts]( std::tuple<std::string, TestData> step /*std::string step*/ )
                 {
                     Log::test() << LogTest::Progress{};
-                    auto regList = std::make_shared<RegionsList<CELL>>( 0 );
+                    auto regList = std::make_shared<RegionsList<CELL>>( 0 ); 
                     Error_BasePtr err = nullptr;
 
                     do {
@@ -834,17 +845,17 @@ void RegionsList_Tester::Test_InsertionsComplex()
 
                         // Костыль. TestData::intermediate_reg играет разную роль: для CheckRegionsList() это Bounds, для GenerateInsertionsComplex() это Released Region при вызове ReleaseRegion().
                         Region_P released_reg = t_data.intermediate_reg;
-                        t_data.intermediate_reg = { Ins_complex::mem, (size_t)Ins_complex::Bounds::MEM_SIZE };       // Теперь в TestData::intermediate_reg записано значение Bounds 
+                        t_data.intermediate_reg = { InsertionsComplex::mem, (size_t)InsertionsComplex::Bounds::MEM_SIZE };       // Теперь в TestData::intermediate_reg записано значение Bounds 
 
                         // Устанавливаем RegionsList в исходное состояние, проверяем
-                        err = rl_manip::SetupRegionsList( regList, t_data );                                            TRACE_CUSTOM_CNT( err, "RegionsList setting-up error in step:\n" + t_data.to_String() + "\n" + mnemo);
-                        err = rl_check::CheckRegionsList( regList, t_data, true, true, true, false );                   TRACE_CUSTOM_CNT( err, "RegionsList is broken after setting-up in step:\n" + t_data.to_String() + "\n" + mnemo );
+                        err = rl_manip::SetupRegionsList( regList, t_data );                                            TRACE_CUSTOM_CNT( err, "RegionsList setting-up error in step:\n" + t_data.to_String() + "\nReleased: " + utils::to_string(released_reg) + "\n" + mnemo);
+                        err = rl_check::CheckRegionsList( regList, t_data, true, true, true, false );                   TRACE_CUSTOM_CNT( err, "RegionsList is broken after setting-up in step:\n" + t_data.to_String() + "\nReleased: " + utils::to_string( released_reg ) + "\n" + mnemo );
 
                         // Производим вставку
-                        err = regList->ReleaseRegion( released_reg );                                                   TRACE_CUSTOM_CNT( err, "Error during region insertion in step:\n" + t_data.to_String() + "\n" + mnemo );
+                        err = regList->ReleaseRegion( released_reg );                                                   TRACE_CUSTOM_CNT( err, "Error during region insertion in step:\n" + t_data.to_String() + "\nReleased: " + utils::to_string( released_reg ) + "\n" + mnemo );
                         
                         // Проверяем RegionsList теперь
-                        err = rl_check::CheckRegionsList( regList, t_data );                                            TRACE_CUSTOM_CNT( err, "RegionsList is broken after insertion in step:\n" + t_data.to_String() + "\n" + mnemo );
+                        err = rl_check::CheckRegionsList( regList, t_data );                                            TRACE_CUSTOM_CNT( err, "RegionsList is broken after insertion in step:\n" + t_data.to_String() + "\nReleased: " + utils::to_string( released_reg ) + "\n" + mnemo );
                         return;
 
                     } while (0);
@@ -891,7 +902,7 @@ void RegionsList_Tester::Test_GrabbingsInsertionsRandom(const ConfigGIR &conf)
 
     // Создаём/инициализируем тестируемый RegionsList
     Region_P initial_reg{ memoryPitch, pitch_size };
-    size_t initial_capacity = 0;
+    size_t initial_capacity = 40;
 
     auto regList = std::make_shared<RegionsList<CELL>>( initial_capacity );
 
@@ -1091,8 +1102,8 @@ void RegionsList_Tester::Test_GrabbingsInsertionsRandom(const ConfigGIR &conf)
     }
 
     if( count_grab != 0 && count_release != 0 ) {
-        //Log::info( "Log.txt" ) << "Time spent for " << count_grab << " Grabbs:   " << std::chrono::duration_cast<std::chrono::milliseconds>( grab_time_ns ).count() << "ms (average " << grab_time_ns.count() / count_grab << " ns)\n"
-        //                       << "Time spent for " << count_release << " Releases: " << std::chrono::duration_cast<std::chrono::milliseconds>( release_time_ns ).count() << "ms (average " << release_time_ns.count() / count_release << " ns)\n" << Log::endlog{};
+        Log::info( "Log.txt" ) << "Time spent for " << count_grab << " Grabbs:   " << std::chrono::duration_cast<std::chrono::milliseconds>( grab_time_ns ).count() << "ms (average " << grab_time_ns.count() / count_grab << " ns)\n"
+                               << "Time spent for " << count_release << " Releases: " << std::chrono::duration_cast<std::chrono::milliseconds>( release_time_ns ).count() << "ms (average " << release_time_ns.count() / count_release << " ns)\n" << Log::endlog{};
     }
     Log::test( "Log.txt" ) << LogTest::Finished{ err == nullptr };
     return;
@@ -1136,14 +1147,14 @@ void RegionsList_Tester::GenerateGrabsComplex( std::vector<TestData> &out_grabbs
         // Формируем исходный P-список
         for (int i = 0; i < InsertionPlace::P5_Finish; ++i)
         {
-            Region_P reg = { Ins_complex::regPtrs[i], initial_sizes[n][i] };
+            Region_P reg = { InsertionsComplex::regPtrs[i], initial_sizes[n][i] };
             p_list_initial[i] = reg;
         }
         // Формируем исходный S-список на основе P-списка (сортируем эл-ты сначала по Size, затем по Pointer)
         s_list_initial = utils::SListFromPList( p_list_initial );
 
         // Перебор состояний LR-полей списка (L0R0, L0R1, L1R0, L1R1)
-        for (const auto& f : Ins_complex::FieldStates)
+        for (const auto& f : InsertionsComplex::FieldStates)
         {
             // Перебор запросов шириной 1-5
             for (size_t i = 1; i < 6; ++i)
@@ -1268,18 +1279,18 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
             // Формируем исходный P-список
             for (int i = 0; i < InsertionPlace::P5_Finish; ++i)
             {
-                Region_P reg = { Ins_complex::regPtrs[i], sizes[i] };
+                Region_P reg = { InsertionsComplex::regPtrs[i], sizes[i] };
                 p_list_initial[i] = reg;
             }
             // Формируем исходный S-список на основе P-списка (сортируем эл-ты сначала по Size, затем по Pointer)
             s_list_initial = utils::SListFromPList( p_list_initial );
 
             // Формируем вставки. Участков для вставки: "regNum + 1" - в начало, в конец и между регионами списка.
-            CELL* start = Ins_complex::mem;
-            CELL* stop = Ins_complex::regPtrs[0];
+            CELL* start = InsertionsComplex::mem;
+            CELL* stop = InsertionsComplex::regPtrs[0];
 
             // Перебор регионов
-            for (auto const& i : Ins_complex::InsertionPlaces)
+            for (auto const& i : InsertionsComplex::InsertionPlaces)
             {
                 std::vector<Region_P> insertions;       // Вставки на данном участке
                 size_t insertPosNum = stop - start;     // Число позиций для вставки на участке
@@ -1290,7 +1301,7 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                     }
                 }
                 // Перебор состояний LR-полей списка (L0R0, L0R1, L1R0, L1R1)
-                for (const auto& f : Ins_complex::FieldStates)
+                for (const auto& f : InsertionsComplex::FieldStates)
                 {
                     // Перебор сгенеренных вставок, определение исходного состояния P-списка
                     for (const auto& reg : insertions)
@@ -1321,9 +1332,9 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                                 right->start = reg.start;
                                 right->size += reg.size;
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, utils::RegionPtoS( *right ) );
-                                Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, del_1_side, Side_NONE );
-                                std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::Start_P1_Adj_R];
-                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
+                                InsertionsComplex::S_ActionType combo = InsertionsComplex::SListActionDetermination( ins_side, del_1_side, Side_NONE );
+                                std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::Start_P1_Adj_R];
+                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = InsertionsComplex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
                                 tdata.s_listContent_resulted = utils::SListFromPList( p_list_resulted );
                             }
@@ -1331,9 +1342,9 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                             else {
                                 p_list_resulted.insert( p_list_resulted.begin(), reg );
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, { reg.start, reg.size, 0 } );
-                                Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, Side_NONE, Side_NONE );
-                                std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::Start_P1_Adj_None];
-                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
+                                InsertionsComplex::S_ActionType combo = InsertionsComplex::SListActionDetermination( ins_side, Side_NONE, Side_NONE );
+                                std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::Start_P1_Adj_None];
+                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = InsertionsComplex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
                                 tdata.s_listContent_resulted = utils::SListFromPList( p_list_resulted );
                             }
@@ -1348,9 +1359,9 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                                 Side del_1_side = utils::DeleteRegion<RegionP, CELL>( s_list_resulted, utils::RegionPtoS( *left ) );
                                 left->size += reg.size;
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, utils::RegionPtoS( *left ) );
-                                Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, del_1_side, Side_NONE );
-                                std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P5_Finish_Adj_L];
-                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
+                                InsertionsComplex::S_ActionType combo = InsertionsComplex::SListActionDetermination( ins_side, del_1_side, Side_NONE );
+                                std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P5_Finish_Adj_L];
+                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = InsertionsComplex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
                                 tdata.s_listContent_resulted = utils::SListFromPList( p_list_resulted );
                             }
@@ -1358,9 +1369,9 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                             else {
                                 p_list_resulted.insert( p_list_resulted.end(), reg );
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, { reg.start, reg.size, 0 } );
-                                Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, Side_NONE, Side_NONE );
-                                std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P5_Finish_Adj_None];
-                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
+                                InsertionsComplex::S_ActionType combo = InsertionsComplex::SListActionDetermination( ins_side, Side_NONE, Side_NONE );
+                                std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P5_Finish_Adj_None];
+                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = InsertionsComplex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
                                 tdata.s_listContent_resulted = utils::SListFromPList( p_list_resulted );
                             }
@@ -1372,10 +1383,10 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                             if (utils::CheckAdj( *left, reg, *right ) == Adjacency::Adj_Both)
                             {
                                 switch (i) {
-                                case InsertionPlace::P1_P2: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P1_P2_Adj_RL]; break; } // |  [0]###[1]   [2]   [3]   [4]  |
-                                case InsertionPlace::P2_P3: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P2_P3_Adj_RL]; break; } // |  [0]   [1]###[2]   [3]   [4]  |
-                                case InsertionPlace::P3_P4: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P3_P4_Adj_RL]; break; } // |  [0]   [1]   [2]###[3]   [4]  |
-                                case InsertionPlace::P4_P5: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P4_P5_Adj_RL]; break; } // |  [0]   [1]   [2]   [3]###[4]  |
+                                case InsertionPlace::P1_P2: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P1_P2_Adj_RL]; break; } // |  [0]###[1]   [2]   [3]   [4]  |
+                                case InsertionPlace::P2_P3: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P2_P3_Adj_RL]; break; } // |  [0]   [1]###[2]   [3]   [4]  |
+                                case InsertionPlace::P3_P4: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P3_P4_Adj_RL]; break; } // |  [0]   [1]   [2]###[3]   [4]  |
+                                case InsertionPlace::P4_P5: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P4_P5_Adj_RL]; break; } // |  [0]   [1]   [2]   [3]###[4]  |
                                 }
                                 to_del_1 = utils::RegionPtoS( *left );
                                 to_del_2 = utils::RegionPtoS( *right );
@@ -1385,56 +1396,56 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                                 Side del_1_side = utils::DeleteRegion<RegionP, CELL>( s_list_resulted, to_del_1 );
                                 Side del_2_side = utils::DeleteRegion<RegionP, CELL>( s_list_resulted, to_del_2 );
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, to_ins );
-                                Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, del_1_side, del_2_side );
-                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
+                                InsertionsComplex::S_ActionType combo = InsertionsComplex::SListActionDetermination( ins_side, del_1_side, del_2_side );
+                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = InsertionsComplex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
                                 tdata.s_listContent_resulted = utils::SListFromPList( p_list_resulted );
                             }
                             else if (utils::CheckAdj( *left, reg, *right ) == Adjacency::Adj_Left)
                             {
                                 switch (i) {
-                                case InsertionPlace::P1_P2: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P1_P2_Adj_L]; break; } // |  [0]###[1]   [2]   [3]   [4]  |
-                                case InsertionPlace::P2_P3: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P2_P3_Adj_L]; break; } // |  [0]   [1]###[2]   [3]   [4]  |
-                                case InsertionPlace::P3_P4: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P3_P4_Adj_L]; break; } // |  [0]   [1]   [2]###[3]   [4]  |
-                                case InsertionPlace::P4_P5: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P4_P5_Adj_L]; break; } // |  [0]   [1]   [2]   [3]###[4]  |
+                                case InsertionPlace::P1_P2: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P1_P2_Adj_L]; break; } // |  [0]###[1]   [2]   [3]   [4]  |
+                                case InsertionPlace::P2_P3: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P2_P3_Adj_L]; break; } // |  [0]   [1]###[2]   [3]   [4]  |
+                                case InsertionPlace::P3_P4: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P3_P4_Adj_L]; break; } // |  [0]   [1]   [2]###[3]   [4]  |
+                                case InsertionPlace::P4_P5: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P4_P5_Adj_L]; break; } // |  [0]   [1]   [2]   [3]###[4]  |
                                 }
                                 Side del_1_side = utils::DeleteRegion<RegionP, CELL>( s_list_resulted, utils::RegionPtoS( *left ) );
                                 left->size += reg.size;
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, utils::RegionPtoS( *left ) );
-                                Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, del_1_side, Side_NONE );
-                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
+                                InsertionsComplex::S_ActionType combo = InsertionsComplex::SListActionDetermination( ins_side, del_1_side, Side_NONE );
+                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = InsertionsComplex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
                                 tdata.s_listContent_resulted = utils::SListFromPList( p_list_resulted );
                             }
                             else if (utils::CheckAdj( *left, reg, *right ) == Adjacency::Adj_NONE)
                             {
                                 switch (i) {
-                                case InsertionPlace::P1_P2: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P1_P2_Adj_None]; break; } // |  [0]###[1]   [2]   [3]   [4]  |
-                                case InsertionPlace::P2_P3: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P2_P3_Adj_None]; break; } // |  [0]   [1]###[2]   [3]   [4]  |
-                                case InsertionPlace::P3_P4: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P3_P4_Adj_None]; break; } // |  [0]   [1]   [2]###[3]   [4]  |
-                                case InsertionPlace::P4_P5: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P4_P5_Adj_None]; break; } // |  [0]   [1]   [2]   [3]###[4]  |
+                                case InsertionPlace::P1_P2: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P1_P2_Adj_None]; break; } // |  [0]###[1]   [2]   [3]   [4]  |
+                                case InsertionPlace::P2_P3: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P2_P3_Adj_None]; break; } // |  [0]   [1]###[2]   [3]   [4]  |
+                                case InsertionPlace::P3_P4: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P3_P4_Adj_None]; break; } // |  [0]   [1]   [2]###[3]   [4]  |
+                                case InsertionPlace::P4_P5: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P4_P5_Adj_None]; break; } // |  [0]   [1]   [2]   [3]###[4]  |
                                 }
                                 p_list_resulted.insert( p_list_resulted.begin() + i, reg );
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, utils::RegionPtoS( reg ) );
-                                Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, Side_NONE, Side_NONE );
-                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
+                                InsertionsComplex::S_ActionType combo = InsertionsComplex::SListActionDetermination( ins_side, Side_NONE, Side_NONE );
+                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = InsertionsComplex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
                                 tdata.s_listContent_resulted = utils::SListFromPList( p_list_resulted );
                             }
                             else {
                                 switch (i) {
-                                case InsertionPlace::P1_P2: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P1_P2_Adj_R]; break; } // |  [0]###[1]   [2]   [3]   [4]  |
-                                case InsertionPlace::P2_P3: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P2_P3_Adj_R]; break; } // |  [0]   [1]###[2]   [3]   [4]  |
-                                case InsertionPlace::P3_P4: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P3_P4_Adj_R]; break; } // |  [0]   [1]   [2]###[3]   [4]  |
-                                case InsertionPlace::P4_P5: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = Ins_complex::P_States[f][Ins_complex::P4_P5_Adj_R]; break; } // |  [0]   [1]   [2]   [3]###[4]  |
+                                case InsertionPlace::P1_P2: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P1_P2_Adj_R]; break; } // |  [0]###[1]   [2]   [3]   [4]  |
+                                case InsertionPlace::P2_P3: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P2_P3_Adj_R]; break; } // |  [0]   [1]###[2]   [3]   [4]  |
+                                case InsertionPlace::P3_P4: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P3_P4_Adj_R]; break; } // |  [0]   [1]   [2]###[3]   [4]  |
+                                case InsertionPlace::P4_P5: { std::tie( p_mnemonic, tdata.p_listState_initial, tdata.p_listState_resulted ) = InsertionsComplex::P_States[f][InsertionsComplex::P4_P5_Adj_R]; break; } // |  [0]   [1]   [2]   [3]###[4]  |
                                 }
                                 Side del_1_side = utils::DeleteRegion<RegionP, CELL>( s_list_resulted, utils::RegionPtoS( *right ) );
                                 right->start = reg.start;
                                 right->size += reg.size;
                                 Side ins_side = utils::Find_SList_InsertionSide( s_list_resulted, utils::RegionPtoS( *right ) );
-                                Ins_complex::S_ActionType combo = Ins_complex::SListActionDetermination( ins_side, del_1_side, Side_NONE );
+                                InsertionsComplex::S_ActionType combo = InsertionsComplex::SListActionDetermination( ins_side, del_1_side, Side_NONE );
 
-                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = Ins_complex::S_States[f][combo];
+                                std::tie( s_mnemonic, tdata.s_listState_initial, tdata.s_listState_resulted ) = InsertionsComplex::S_States[f][combo];
                                 tdata.p_listContent_resulted = p_list_resulted;
                                 tdata.s_listContent_resulted = utils::SListFromPList( p_list_resulted );
                             }
@@ -1451,7 +1462,7 @@ void RegionsList_Tester::GenerateInsertionsComplex( std::vector<std::tuple<std::
                 if (i == InsertionPlace::P5_Finish)
                     break;
                 start = stop + p_list_initial[i].size;
-                stop = Ins_complex::regPtrs[i + 1];
+                stop = InsertionsComplex::regPtrs[i + 1];
             }
             s_list_initial.clear();
         }

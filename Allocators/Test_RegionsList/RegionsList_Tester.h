@@ -31,8 +31,8 @@ public:
     // Проверяет захват региона, большего, чем есть в RegionsList
     void Test_GrabbingTooBigRegion();
 
-    // Проверяет работу RegionsList при расширении списков (ExpandList)
-    void Test_ListsExpanding();
+    // Проверяет работу RegionsList при расширении списков (ReorganizeList)
+    void Test_ListsReorganise();
 
     // Проверяет инициализирующую вставку в RegionsList (когда он только создан и ничего не содержит)
     void Test_InitialReleaseRegion();

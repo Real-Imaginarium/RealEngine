@@ -55,68 +55,69 @@ int main(int argc, const char** argv)
 
     std::unique_ptr<RegionsList_Tester> tester = std::make_unique<RegionsList_Tester>();
 
-    for (int i = 0; i < iterations; ++i) {
-        if (DoubleInserion || AllTests) {
+    for( int i = 0; i < 100; ++i ) {
+        if( DoubleInserion || AllTests ) {
             tester->Test_DoubleInserion();
         }
-        if (OverlappedInsertion || AllTests) {
+        if( OverlappedInsertion || AllTests ) {
             tester->Test_OverlappedInsertion();
         }
-        if (GrabbingFromEmptyList || AllTests) {
+        if( GrabbingFromEmptyList || AllTests ) {
             tester->Test_GrabbingFromEmptyList();
         }
-        if (GrabbingTooBigRegion || AllTests) {
+        if( GrabbingTooBigRegion || AllTests ) {
             tester->Test_GrabbingTooBigRegion();
         }
-        if (ListsExpanding || AllTests) {
-            tester->Test_ListsExpanding();
+        if( ListsExpanding || AllTests ) {
+            tester->Test_ListsReorganise();
         }
-        if (InitialReleaseRegion || AllTests) {
+        if( InitialReleaseRegion || AllTests ) {
             tester->Test_InitialReleaseRegion();
         }
-        if (SecondRelease_LeftRightAdj || AllTests) {
+        if( SecondRelease_LeftRightAdj || AllTests ) {
             tester->Test_SecondRelease_LeftRightAdj();
         }
-        if (SecondRelease_Left_Less_Size || AllTests) {
+        if( SecondRelease_Left_Less_Size || AllTests ) {
             tester->Test_SecondRelease_Left_Less_Size();
         }
-        if (SecondRelease_Left_Great_Size || AllTests) {
+        if( SecondRelease_Left_Great_Size || AllTests ) {
             tester->Test_SecondRelease_Left_Great_Size();
         }
-        if (SecondRelease_Left_Equal_Size || AllTests) {
+        if( SecondRelease_Left_Equal_Size || AllTests ) {
             tester->Test_SecondRelease_Left_Equal_Size();
         }
-        if (SecondRelease_Right_Less_Size || AllTests) {
+        if( SecondRelease_Right_Less_Size || AllTests ) {
             tester->Test_SecondRelease_Right_Less_Size();
         }
-        if (SecondRelease_Right_Great_Size || AllTests) {
+        if( SecondRelease_Right_Great_Size || AllTests ) {
             tester->Test_SecondRelease_Right_Great_Size();
         }
-        if (SecondRelease_Right_Equal_Size || AllTests) {
+        if( SecondRelease_Right_Equal_Size || AllTests ) {
             tester->Test_SecondRelease_Right_Equal_Size();
         }
-        if (GrabbingFromSingleSizedList || AllTests) {
+        if( GrabbingFromSingleSizedList || AllTests ) {
             tester->Test_GrabbingFromSingleSizedList();
         }
-        if (GrabingsComplex || AllTests) {
-            tester->Test_GrabbingsComplex();
-        }
-        if (InsertionsComplex || AllTests) {
-            tester->Test_InsertionsComplex();
-        }
-        if (GrabbingsInsertionsRandom || AllTests) {
-                                                            /* Trans   MemSize  Min  Max     */
-            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     0,   0      } );
-            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     0,   1      } );
-            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     1,   1      } );
-            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     99,  100    } );
-            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     101, 101    } );
-            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     100, 101    } );
-            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     100, 100    } );
-            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     0,   100    } );
-            tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 100000, 100000,  0,   120000 } );
-        }
     }
+
+    //if (GrabingsComplex || AllTests) {
+    //    tester->Test_GrabbingsComplex();
+    //}
+    //if (InsertionsComplex || AllTests) {
+    //    tester->Test_InsertionsComplex();
+    //}
+    //if (GrabbingsInsertionsRandom || AllTests) {
+    //                                                    /* Trans   MemSize  Min  Max     */
+    //    tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  1000,    0,   0      } );
+    //    tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  1000,    0,   1      } );
+    //    tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  1000,    1,   1      } );
+    //    tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     99,  100    } );
+    //    tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     101, 101    } );
+    //    tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     100, 101    } );
+    //    tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     100, 100    } );
+    //    tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     0,   100    } );
+    //    tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 100000, 100000,  0,   120000 } );
+    //}
     system( "Pause" );
     return 0;
 }
