@@ -8,7 +8,7 @@ Error_RegionsList::Error_RegionsList( ERL_Type err_type, void *start, size_t siz
     , m_reg_start( (size_t)start )
     , m_reg_size( size )
 {
-    if( err_type != ERL_Type::EXISTING_REG_INSERTION && err_type != ERL_Type::OVERLAPPED_REG_INSERTION ) {
+    if( err_type != ERL_Type::EXISTING_REG_INSERTION && err_type != ERL_Type::OVERLAPPED_REG_INSERTION && err_type != ERL_Type::SUCH_REGION_NOTFOUND ) {
         m_errType = ERL_Type::NONE;
         m_reg_start = m_reg_size = 0;
     }
@@ -68,6 +68,9 @@ void Error_RegionsList::PrintSelf() const
             break;
         case ERL_Type::OVERLAPPED_REG_INSERTION:
             concretisation = "Trying to insert overlapping RegionP in P-List: [start = " + std::to_string( m_reg_start ) + " ; size = " + std::to_string( m_reg_size ) + "]";
+            break;
+        case ERL_Type::SUCH_REGION_NOTFOUND:
+            concretisation = "Can't find such region in List: [start = " + std::to_string( m_reg_start ) + " ; size = " + std::to_string( m_reg_size ) + "]";
             break;
         case ERL_Type::GRAB_FROM_EMPTY_LIST:
             concretisation = "Trying to grab the region from empty S-List (e.g. nothing to grab)";

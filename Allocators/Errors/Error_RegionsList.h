@@ -10,6 +10,7 @@ enum class ERL_Type : uint8_t
     GRAB_FROM_EMPTY_LIST,           // Запрос региона, когда список пуст
     CONSISTENT_REG_NOTFOUND,        // Регион подходящей ширины не найден в S-List
     REG_WITH_SUCH_START_NOTFOUND,   // Регион с таким .start не найден в P-List
+    SUCH_REGION_NOTFOUND,           // Регион с таким .start и .size не найден в списке
     P_LIST_ALLOCATION,              // Выделение памяти для P-List потерпело фиаско
     S_LIST_ALLOCATION,              // Выделение памяти для S-List потерпело фиаско
 };

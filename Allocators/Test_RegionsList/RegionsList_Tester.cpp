@@ -1062,6 +1062,7 @@ void RegionsList_Tester::Test_GrabbingsInsertionsRandom(const ConfigGIR &conf)
     // Если Grab- или Release- завершились с непредусмотренной ошибкой - выводим в лог все транзакции и выходим
     if (err) {
         //log_transactions( performed_transactions, &Log::debug("Log.txt") );
+        delete[] memoryPitch;
         Log::test( "Log.txt" ) << LogTest::Finished{ false };
         return;
     }
@@ -1096,16 +1097,17 @@ void RegionsList_Tester::Test_GrabbingsInsertionsRandom(const ConfigGIR &conf)
         TRACE_CUSTOM_PRNT_CNT( err, "Memory error" );
     } while (0);
 
-
     if (err) {
-        log_transactions( performed_transactions, &Log::debug( "Log.txt" ) );
+        //log_transactions( performed_transactions, &Log::debug( "Log.txt" ) );
     }
-
     if( count_grab != 0 && count_release != 0 ) {
-        Log::info( "Log.txt" ) << "Time spent for " << count_grab << " Grabbs:   " << std::chrono::duration_cast<std::chrono::milliseconds>( grab_time_ns ).count() << "ms (average " << grab_time_ns.count() / count_grab << " ns)\n"
-                               << "Time spent for " << count_release << " Releases: " << std::chrono::duration_cast<std::chrono::milliseconds>( release_time_ns ).count() << "ms (average " << release_time_ns.count() / count_release << " ns)\n" << Log::endlog{};
+        unsigned long long grab_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>( grab_time_ns ).count();
+        unsigned long long release_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>( release_time_ns ).count();
+        Log::info( "Log.txt" ) << "Time spent for " << count_grab << " Grabbs:   " << grab_time_ms << "ms (average " << grab_time_ns.count() / count_grab << " ns)\n"
+                               << "Time spent for " << count_release << " Releases: " << release_time_ms << "ms (average " << release_time_ns.count() / count_release << " ns)\n" << Log::endlog{};
     }
     Log::test( "Log.txt" ) << LogTest::Finished{ err == nullptr };
+    delete[] memoryPitch;
     return;
 }
 

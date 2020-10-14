@@ -65,7 +65,7 @@ size_t upper_bound( int *arr, size_t size, int value, bool& founded );          
 size_t upper_bound( int *arr, size_t size, int value );                                    // upper_bound по int
 
 template<class T>
-inline RegionS<T> RegionPtoS( const RegionP<T> &regP );                                    // —троит RegionS на основе RegionP, просто добавл€€ отсутствующее поле "count" = 0
+inline RegionS<T> RegionPtoS( const RegionP<T> &regP, size_t count = 0 );                  // —троит RegionS на основе RegionP, просто добавл€€ отсутствующее поле "count" = 0
 
 template<class T>
 inline std::vector<RegionS<T>> SListFromPList( const std::vector<RegionP<T>> &in );                // —троит S-List на основе P-List (пересортировкой сначала по size, затем по start)
@@ -145,8 +145,8 @@ RegionP<T> operator-( const RegionP<T>& l_op, size_t r_op );
 namespace utils
 {
 /*      Ќаходит индекс первого элемента массива, >= (lower_bound) или < (upper_bound) искомого значени€. ≈сли такой элемент не найден
-    *  - возвращает длину массива. ћассив должен быть отсортирован по типу искомого значени€.
-    */
+ *  - возвращает длину массива. ћассив должен быть отсортирован по типу искомого значени€.
+ */
 template<class T>
 size_t lower_bound( RegionP<T>* arr, size_t size, const T* value, bool& founded )
 {
@@ -325,9 +325,9 @@ size_t upper_bound( RegionP<T>* arr, size_t size, size_t value ) {
 
 /*  —троит RegionS на основе RegionP, просто добавл€€ отсутствующее поле "count" = 0  */
 template<class T>
-RegionS<T> RegionPtoS( const RegionP<T>& regP )
+RegionS<T> RegionPtoS( const RegionP<T>& regP, size_t count )
 {
-    return { regP.start, regP.size, 0 };
+    return { regP.start, regP.size, count };
 }
 
 
