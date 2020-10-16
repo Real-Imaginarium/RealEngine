@@ -6,7 +6,7 @@
 class Error_Param : public Error_Base
 {
 public:
-    ERRORS_API Error_Param( int arg_pos, std::string arg_name, std::string expected, std::string gained, const char* file, const char* func, int line, const char* logFile = g_error_log_name );
+    Error_Param( int arg_pos, std::string arg_name, std::string expected, std::string gained, const char* file, const char* func, int line, const char* logFile = g_error_log_name );
 
 protected:
     virtual std::string Name() const override;

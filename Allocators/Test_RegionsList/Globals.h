@@ -37,19 +37,19 @@ struct TestCell
     }
 };
 
-struct DescriptorHandler
+struct Descriptor
 {
-    DescriptorHandler( size_t i = 0 )
+    Descriptor( size_t i = 0 )
         : desc_handle( 0 ), index_in_heap( i )
     {};
     uint64_t desc_handle;
     uint64_t index_in_heap;
 
-    DescriptorHandler& operator+=( size_t r_op ) {
+    Descriptor& operator+=( size_t r_op ) {
         this->index_in_heap += r_op;
         return *this;
     }
-    DescriptorHandler& operator-=( size_t r_op ) {
+    Descriptor& operator-=( size_t r_op ) {
         this->index_in_heap -= r_op;
         return *this;
     }
@@ -63,7 +63,7 @@ struct DescriptorHandler
 
 /*Раскомментировать нужный тип*/
 //using CELL = TestCell;
-using CELL = DescriptorHandler;
+using CELL = Descriptor;
 //using CELL = uint8_t;
 
 

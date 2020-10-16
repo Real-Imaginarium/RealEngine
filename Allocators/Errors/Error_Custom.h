@@ -6,9 +6,9 @@
 class Error_Custom : public Error_Base
 {
 public:
-    ERRORS_API Error_Custom( const std::string &desc, const char *file, const char *func, int line, const char *logFile );
+    Error_Custom( const std::string &desc, const char *file, const char *func, int line, const char *logFile );
 
-    ERRORS_API ~Error_Custom() override;
+    ~Error_Custom() override;
 
 protected:
     virtual std::string Name() const override;

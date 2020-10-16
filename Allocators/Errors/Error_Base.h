@@ -1,11 +1,5 @@
 #pragma once
 
-#ifdef ERRORS_EXPORTS
-    #define ERRORS_API __declspec(dllexport)
-#else
-    #define ERRORS_API __declspec(dllimport)
-#endif
-
 #define PLACE() __FILE__, __FUNCTION__, __LINE__
 
 #include <filesystem>
@@ -22,13 +16,13 @@ using ErrorList = std::list<Error_BasePtr>;
 class Error_Base
 {
 public:
-    ERRORS_API static bool Trace( Error_BasePtr err, Error_BasePtr consiquent_err );
+    static bool Trace( Error_BasePtr err, Error_BasePtr consiquent_err );
 
-    ERRORS_API Error_Base( const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
+    Error_Base( const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
 
-    ERRORS_API virtual void Print();
+    virtual void Print();
 
-    ERRORS_API static const char *g_error_log_name;
+    static const char *g_error_log_name;
 
 protected:
     virtual ~Error_Base();

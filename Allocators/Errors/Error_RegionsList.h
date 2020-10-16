@@ -19,12 +19,12 @@ enum class ERL_Type : uint8_t
 class Error_RegionsList : public Error_Base
 {
 public:
-    ERRORS_API Error_RegionsList( ERL_Type err_type, void *start, size_t size, const char *file, const char *func, int line, const char *logFile = g_error_log_name );
-    ERRORS_API Error_RegionsList( ERL_Type err_type, void *start, const char *file, const char *func, int line, const char *logFile = g_error_log_name );
-    ERRORS_API Error_RegionsList( ERL_Type err_type, size_t size, const char *file, const char *func, int line, const char *logFile = g_error_log_name );
-    ERRORS_API Error_RegionsList( ERL_Type err_type, const char *file, const char *func, int line, const char *logFile = g_error_log_name );
+    Error_RegionsList( ERL_Type err_type, void *start, size_t size, const char *file, const char *func, int line, const char *logFile = g_error_log_name );
+    Error_RegionsList( ERL_Type err_type, void *start, const char *file, const char *func, int line, const char *logFile = g_error_log_name );
+    Error_RegionsList( ERL_Type err_type, size_t size, const char *file, const char *func, int line, const char *logFile = g_error_log_name );
+    Error_RegionsList( ERL_Type err_type, const char *file, const char *func, int line, const char *logFile = g_error_log_name );
 
-    ERRORS_API ERL_Type Type() const { return m_errType; }
+    ERL_Type Type() const { return m_errType; }
 
 protected:
     virtual std::string Name() const override;

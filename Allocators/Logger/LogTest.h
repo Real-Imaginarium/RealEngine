@@ -40,14 +40,14 @@ public:
         //return std::string( "[ TEST " + m_stateStr + " ][id: " + sstr.str() + "] " );
     }
 
-    LOGGER_API void operator<<( const Start& val );
+    void operator<<( const Start& val );
 
-    LOGGER_API void operator<<( const Progress& );
+    void operator<<( const Progress& );
 
-    LOGGER_API void operator<<( const Finished& val );
+    void operator<<( const Finished& val );
 
 private:
-    LOGGER_API void operator<<( const endlog& end ) override;
+    void operator<<( const endlog& end ) override;
 
     bool SwitchState( TestStates newState );
 

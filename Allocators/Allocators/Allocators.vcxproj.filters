@@ -18,5 +18,13 @@
     <ClCompile Include="RegionsList.hpp">
       <Filter>Файлы заголовков</Filter>
     </ClCompile>
+    <ClCompile Include="RegionsBasedAllocator.hpp">
+      <Filter>Файлы заголовков</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="IAllocator.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

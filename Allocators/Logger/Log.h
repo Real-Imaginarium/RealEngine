@@ -1,11 +1,5 @@
 #pragma once
 
-#ifdef LOGGER_EXPORTS
-#define LOGGER_API __declspec(dllexport)
-#else
-#define LOGGER_API __declspec(dllimport)
-#endif
-
 #include <type_traits>
 #include <iostream>
 #include <ostream>
@@ -14,6 +8,7 @@
 #include <mutex>
 #include <cstdint>
 #include <filesystem>
+
 
 class LogDebug;
 class LogInfo;
@@ -127,19 +122,19 @@ public:
         return *this;
     }
 
-    LOGGER_API Log& operator<<( const Styles& st );
+    Log& operator<<( const Styles& st );
 
-    LOGGER_API virtual void operator<<( const endlog&);
+    virtual void operator<<( const endlog&);
 
-    LOGGER_API static LogDebug& debug( const std::string& toFile = "" );
+    static LogDebug& debug( const std::string& toFile = "" );
 
-    LOGGER_API static LogInfo& info( const std::string& toFile = "" );
+    static LogInfo& info( const std::string& toFile = "" );
 
-    LOGGER_API static LogWarning& warning( const std::string& toFile = "" );
+    static LogWarning& warning( const std::string& toFile = "" );
 
-    LOGGER_API static LogError& error( const std::string& toFile = "" );
+    static LogError& error( const std::string& toFile = "" );
 
-    LOGGER_API static LogTest& test( const std::string& toFile = "" );
+    static LogTest& test( const std::string& toFile = "" );
     
     Styles m_current_style;
 protected:
@@ -155,7 +150,7 @@ protected:
     static LogError *m_logE;
     static LogTest *m_logTest;
 
-    LOGGER_API static bool m_needNewLine;
+    static bool m_needNewLine;
     
     std::stringstream m_sstream;
     std::ofstream m_outputFile;
@@ -164,5 +159,5 @@ protected:
     std::string m_trace;
     static std::recursive_mutex m_stream_mutex;
 
-    LOGGER_API std::vector<std::string> SplitString( const std::string& s, char delimiter );
+    std::vector<std::string> SplitString( const std::string& s, char delimiter );
 };

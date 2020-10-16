@@ -58,7 +58,7 @@ void Log::operator<<( const endlog& )
 }
 
 
-inline LogDebug& Log::debug( const std::string& toFile )
+LogDebug& Log::debug( const std::string& toFile )
 {
     m_stream_mutex.lock();
     if (m_logD == nullptr) {
@@ -70,7 +70,7 @@ inline LogDebug& Log::debug( const std::string& toFile )
 }
 
 
-inline LogInfo& Log::info( const std::string& toFile )
+LogInfo& Log::info( const std::string& toFile )
 {
     m_stream_mutex.lock();
     if (m_logI == nullptr) {
@@ -82,7 +82,7 @@ inline LogInfo& Log::info( const std::string& toFile )
 }
 
 
-inline LogWarning& Log::warning( const std::string& toFile )
+LogWarning& Log::warning( const std::string& toFile )
 {
     m_stream_mutex.lock();
     if (m_logW == nullptr) {
@@ -94,7 +94,7 @@ inline LogWarning& Log::warning( const std::string& toFile )
 }
 
 
-inline LogError& Log::error( const std::string& toFile )
+LogError& Log::error( const std::string& toFile )
 {
     m_stream_mutex.lock();
     if (m_logE == nullptr) {
@@ -105,7 +105,7 @@ inline LogError& Log::error( const std::string& toFile )
     return *m_logE;
 }
 
-inline LogTest& Log::test( const std::string& toFile )
+LogTest& Log::test( const std::string& toFile )
 {
     m_stream_mutex.lock();
     if (m_logTest == nullptr) {

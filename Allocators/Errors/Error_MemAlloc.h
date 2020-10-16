@@ -15,17 +15,17 @@ enum class Method : uint8_t
 class Error_MemAlloc : public Error_Base
 {
 public:
-    ERRORS_API Error_MemAlloc( size_t alloc_size_bytes, const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
+    Error_MemAlloc( size_t alloc_size_bytes, const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
 
-    ERRORS_API Error_MemAlloc( size_t elem_count, size_t elem_size_bytes, const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
+    Error_MemAlloc( size_t elem_count, size_t elem_size_bytes, const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
 
-    ERRORS_API Error_MemAlloc( void *memory_block, size_t new_size_bytes, const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
+    Error_MemAlloc( void *memory_block, size_t new_size_bytes, const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
 
-    ERRORS_API Error_MemAlloc( size_t alloc_size_bytes, const std::string mess, const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
+    Error_MemAlloc( size_t alloc_size_bytes, const std::string mess, const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
 
-    ERRORS_API Error_MemAlloc( size_t elem_count, size_t elem_size_bytes, const std::string mess, const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
+    Error_MemAlloc( size_t elem_count, size_t elem_size_bytes, const std::string mess, const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
 
-    ERRORS_API Error_MemAlloc( void *memory_block, size_t new_size_bytes, const std::string mess, const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
+    Error_MemAlloc( void *memory_block, size_t new_size_bytes, const std::string mess, const char *file_name, const char *func_name, int line, const char *logFile_name = g_error_log_name );
 
 protected:
     virtual std::string Name() const override;
