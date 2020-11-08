@@ -30,9 +30,9 @@ class RegionsList
 public:
     friend class rl_manip;
 
-    RegionsList( size_t capacity = g_minimum_capacity );
+    RegionsList( size_t m_capacity = g_minimum_capacity );
 
-    RegionsList( size_t capacity, RegionP<T> managed_reg );
+    RegionsList( size_t m_capacity, RegionP<T> managed_reg );
 
     ~RegionsList();
 
@@ -83,7 +83,7 @@ private:
     inline Error_BasePtr ReorganizeList();                                          // Оптимально перераспределяет контент P- или S-List или расширяет его, давая возможность вставки новых элементов
 
     template<class ListType>
-    inline Error_BasePtr ExpandList();                                              // Удваивает capacity P- или S-List со сдвигом исходного контента в центр
+    inline Error_BasePtr ExpandList();                                              // Удваивает m_capacity P- или S-List со сдвигом исходного контента в центр
 
     template<class ListType>
     inline Error_BasePtr ShiftContentLeft( size_t n );                              // Сдвигает контент P- или S-List на n позиций влево
@@ -102,23 +102,23 @@ private:
 
 
 template<class T>
-RegionsList<T>::RegionsList( size_t capacity, RegionP<T> managed_reg ) : RegionsList( capacity )
+RegionsList<T>::RegionsList( size_t m_capacity, RegionP<T> managed_reg ) : RegionsList( m_capacity )
 {
     Error_BasePtr err = ReleaseRegion( managed_reg );                                               TRACE_CUSTOM_THR_ERR( err, "RegionsList error during initial Release()" );
 }
 
 
 template<class T>
-RegionsList<T>::RegionsList( size_t capacity )
+RegionsList<T>::RegionsList( size_t m_capacity )
     : m_p_list_size( 0 )
-    , m_p_list_capacity( capacity )
+    , m_p_list_capacity( m_capacity )
     , m_p_list_spaceLeft( 0 )
     , m_p_list_spaceRight( 0 )
     , m_p_list( nullptr )
     , m_p_list_begin( nullptr )
     , m_p_list_end( nullptr )
     , m_s_list_size( 0 )
-    , m_s_list_capacity( capacity )
+    , m_s_list_capacity( m_capacity )
     , m_s_list_spaceLeft( 0 )
     , m_s_list_spaceRight( 0 )
     , m_s_list( nullptr )
@@ -126,7 +126,7 @@ RegionsList<T>::RegionsList( size_t capacity )
     , m_s_list_end( nullptr )
 {
     // Выделяем память для списков фрагментов. Минимум - для четырёх. Инициализируем
-    if (capacity < g_minimum_capacity) {
+    if (m_capacity < g_minimum_capacity) {
         m_p_list_capacity = m_s_list_capacity = g_minimum_capacity;
     }
     Error_BasePtr err = nullptr;
@@ -182,6 +182,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
         if (founded) {
             return ERR_REGIONSLIST( ERL_Type::EXISTING_REG_INSERTION, region.start, region.size );
         }
+
         // Если вставка в начало P-List
         if (index == 0)
         {
@@ -190,7 +191,7 @@ Error_BasePtr RegionsList<T>::ReleaseRegion( const RegionP<T>& region )
         // Если вставка в конец P-List
         else if (index == m_p_list_size)
         {
-            auto err = ReleaseIntoEnd( region, to_ins, to_del[0], del_cnt );                        TRACE_CUSTOM_RET_ERR( err, "Can't insert into the end of P-List)" );
+            auto err = ReleaseIntoEnd( region, to_ins, to_del[0], del_cnt );                        TRACE_CUSTOM_RET_ERR( err, "Can't insert into the m_end of P-List)" );
         }
         // Если вставка в середину P-List
         else {
@@ -414,7 +415,7 @@ Error_BasePtr RegionsList<T>::ReleaseInSingleSizedList( const RegionP<T> &region
             return nullptr;
         }
         // Добавляем новый регион правее. Место справа уменьшается, конец списка сдвигается вправо.
-        auto err = ReorganizeIfNecessary<RegionP<T>>( m_p_list_spaceRight );                        TRACE_CUSTOM_RET_ERR( err, "Can't reorganize P-List (contains 1 element, insertion to the end, R is empty)." );
+        auto err = ReorganizeIfNecessary<RegionP<T>>( m_p_list_spaceRight );                        TRACE_CUSTOM_RET_ERR( err, "Can't reorganize P-List (contains 1 element, insertion to the m_end, R is empty)." );
         *m_p_list_end++ = region;
         ++m_p_list_size;
         --m_p_list_spaceRight;
@@ -434,7 +435,7 @@ Error_BasePtr RegionsList<T>::ReleaseInSingleSizedList( const RegionP<T> &region
             return nullptr;
         }
         // Добавляем новый регион левее. Место слева уменьшается, начало списка сдвигается влево.
-        auto err = ReorganizeIfNecessary<RegionP<T>>( m_p_list_spaceLeft );                         TRACE_CUSTOM_RET_ERR( err, "Can't reorganize P-List (contains 1 element, insertion to begin, L is empty)." );
+        auto err = ReorganizeIfNecessary<RegionP<T>>( m_p_list_spaceLeft );                         TRACE_CUSTOM_RET_ERR( err, "Can't reorganize P-List (contains 1 element, insertion to m_begin, L is empty)." );
         *( --m_p_list_begin ) = region;
         ++m_p_list_size;
         --m_p_list_spaceLeft;
@@ -442,14 +443,14 @@ Error_BasePtr RegionsList<T>::ReleaseInSingleSizedList( const RegionP<T> &region
     // Если попадаем правее
     if( region.size > m_s_list_begin->size )
     {
-        auto err = ReorganizeIfNecessary<RegionS<T>>( m_s_list_spaceRight );                        TRACE_CUSTOM_RET_ERR( err, "Can't reorganize S-List (contains 1 element, insertion by size to the end, R is empty)." );
+        auto err = ReorganizeIfNecessary<RegionS<T>>( m_s_list_spaceRight );                        TRACE_CUSTOM_RET_ERR( err, "Can't reorganize S-List (contains 1 element, insertion by size to the m_end, R is empty)." );
         *m_s_list_end++ = { region.start, region.size, 1 };
         --m_s_list_spaceRight;
     }
     // Если попадаем левее
     else if( region.size < m_s_list_begin->size )
     {
-        auto err = ReorganizeIfNecessary<RegionS<T>>( m_s_list_spaceLeft );                         TRACE_CUSTOM_RET_ERR( err, "Can't reorganize S-List (contains 1 element, insertion by size to begin, L is empty)." );
+        auto err = ReorganizeIfNecessary<RegionS<T>>( m_s_list_spaceLeft );                         TRACE_CUSTOM_RET_ERR( err, "Can't reorganize S-List (contains 1 element, insertion by size to m_begin, L is empty)." );
         *( --m_s_list_begin ) = { region.start, region.size, 1 };
         --m_s_list_spaceLeft;
     }
@@ -457,13 +458,13 @@ Error_BasePtr RegionsList<T>::ReleaseInSingleSizedList( const RegionP<T> &region
     else {
         if( region.start > m_s_list_begin->start )
         {
-            auto err = ReorganizeIfNecessary<RegionS<T>>( m_s_list_spaceRight );                    TRACE_CUSTOM_RET_ERR( err, "Can't reorganize S-List (contains 1 element, insertion by start to the end, R is empty)." );
+            auto err = ReorganizeIfNecessary<RegionS<T>>( m_s_list_spaceRight );                    TRACE_CUSTOM_RET_ERR( err, "Can't reorganize S-List (contains 1 element, insertion by start to the m_end, R is empty)." );
             m_s_list_begin->count = 2;
             *m_s_list_end++ = { region.start, region.size, 0 };
             --m_s_list_spaceRight;
         }
         else {
-            auto err = ReorganizeIfNecessary<RegionS<T>>( m_s_list_spaceLeft );                     TRACE_CUSTOM_RET_ERR( err, "Can't reorganize S-List (contains 1 element, insertion by start to begin, L is empty)." );
+            auto err = ReorganizeIfNecessary<RegionS<T>>( m_s_list_spaceLeft );                     TRACE_CUSTOM_RET_ERR( err, "Can't reorganize S-List (contains 1 element, insertion by start to m_begin, L is empty)." );
             m_s_list_begin->count = 0;
             *( --m_s_list_begin ) = { region.start, region.size, 2 };
             --m_s_list_spaceLeft;
@@ -520,7 +521,7 @@ Error_BasePtr RegionsList<T>::ReleaseIntoEnd( const RegionP<T> &region, RegionS<
     }
     else
     {
-        auto err = ReorganizeIfNecessary<RegionP<T>>( m_p_list_spaceRight );                        TRACE_CUSTOM_RET_ERR( err, "Can't reorganize P-List (insertion to the end, R is empty)." );
+        auto err = ReorganizeIfNecessary<RegionP<T>>( m_p_list_spaceRight );                        TRACE_CUSTOM_RET_ERR( err, "Can't reorganize P-List (insertion to the m_end, R is empty)." );
         *m_p_list_end++ = region;
         --m_p_list_spaceRight;
         ++m_p_list_size;
@@ -592,7 +593,7 @@ Error_BasePtr RegionsList<T>::ReleaseIntoMiddle( const RegionP<T> &region, size_
         {
             // Места справа не хватает для вставки 1 элемента?
             if( m_p_list_spaceRight == 0 ) {
-                auto err = ReorganizeList<RegionP<T>>();                                            TRACE_CUSTOM_RET_ERR( err, "Can't reorganize P-List (closer to the end insertion, R is empty)." );
+                auto err = ReorganizeList<RegionP<T>>();                                            TRACE_CUSTOM_RET_ERR( err, "Can't reorganize P-List (closer to the m_end insertion, R is empty)." );
                 right = m_p_list_begin + index;     // right после реаллокации списка невалиден. Переопределяем его.
             }
             memmove( right + 1, right, ( m_p_list_size - index ) * sizeof( RegionP<T> ) );        // Сдвигаем эл-ты, начиная с Правый+1 на 1 поз. вправо (освобождаем место для вставки)
@@ -604,7 +605,7 @@ Error_BasePtr RegionsList<T>::ReleaseIntoMiddle( const RegionP<T> &region, size_
         else {
             // Места слева не хватает для вставки 1 элемента?
             if( m_p_list_spaceLeft == 0 ) {
-                auto err = ReorganizeList<RegionP<T>>();                                            TRACE_CUSTOM_RET_ERR( err, "Can't reorganize P-List (closer to begin insertion, L is empty)." );
+                auto err = ReorganizeList<RegionP<T>>();                                            TRACE_CUSTOM_RET_ERR( err, "Can't reorganize P-List (closer to m_begin insertion, L is empty)." );
                 right = m_p_list_begin + index;     // right и left после реаллокации списка невалидны. Переопределяем их.
                 left = right - 1;
             }
@@ -907,13 +908,13 @@ Error_BasePtr RegionsList<T>::InserTo_S_List( const RegionS<T>& ins, size_t inde
     }
     // Вставка в конец?
     else if (index == m_s_list_size) {
-        auto err = ReorganizeIfNecessary<RegionS<T>>( m_s_list_spaceRight );                        TRACE_CUSTOM_RET_ERR( err, "Can't reorganize S-List (insertion at the end, R is empty)." );
+        auto err = ReorganizeIfNecessary<RegionS<T>>( m_s_list_spaceRight );                        TRACE_CUSTOM_RET_ERR( err, "Can't reorganize S-List (insertion at the m_end, R is empty)." );
         *m_s_list_end++ = ins;
         --m_s_list_spaceRight;
     }
     // Вставка ближе к концу?
     else if (index >= m_s_list_size / 2) {
-        auto err = ReorganizeIfNecessary<RegionS<T>>( m_s_list_spaceRight );                        TRACE_CUSTOM_RET_ERR( err, "Can't reorganize S-List (closer to end insertion, R is empty)." );
+        auto err = ReorganizeIfNecessary<RegionS<T>>( m_s_list_spaceRight );                        TRACE_CUSTOM_RET_ERR( err, "Can't reorganize S-List (closer to m_end insertion, R is empty)." );
         memmove( m_s_list_begin + index + 1, m_s_list_begin + index, (m_s_list_size - index) * sizeof( RegionS<T> ) );
         *(m_s_list_begin + index) = ins;
         ++m_s_list_end;
@@ -921,7 +922,7 @@ Error_BasePtr RegionsList<T>::InserTo_S_List( const RegionS<T>& ins, size_t inde
     }
     // Вставка ближе к началу?
     else {
-        auto err = ReorganizeIfNecessary<RegionS<T>>( m_s_list_spaceLeft );                         TRACE_CUSTOM_RET_ERR( err, "Can't reorganize S-List (closer to begin insertion, L is empty)." );
+        auto err = ReorganizeIfNecessary<RegionS<T>>( m_s_list_spaceLeft );                         TRACE_CUSTOM_RET_ERR( err, "Can't reorganize S-List (closer to m_begin insertion, L is empty)." );
         memmove( m_s_list_begin - 1, m_s_list_begin, index * sizeof( RegionS<T> ) );
         --m_s_list_begin;
         *(m_s_list_begin + index) = ins;

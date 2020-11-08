@@ -23,7 +23,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IAllocator.h">
+    <ClInclude Include="IRegionsBasedAllocator.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

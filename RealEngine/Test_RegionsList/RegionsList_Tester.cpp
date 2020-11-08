@@ -55,7 +55,7 @@ void RegionsList_Tester::Test_DoubleInserion()
         std::string err_mess = "Error isn't detected (Trying to insert existing region)";
         auto errRegs = ErrorCast<Error_RegionsList>( regList->ReleaseRegion( initial_region ) );
 
-        if (!errRegs || errRegs->Type() != ERL_Type::EXISTING_REG_INSERTION) {
+        if (!errRegs || errRegs->Elem() != ERL_Type::EXISTING_REG_INSERTION) {
             err = ERR_CUSTOM( err_mess );                                                                                   TRACE_CUSTOM_PRNT_CNT( err, "Wrong behaviour after initial insertion" );
         }
         // ƒелаем вторую вставку
@@ -64,7 +64,7 @@ void RegionsList_Tester::Test_DoubleInserion()
         // ѕытаемс€ заинсертить существующий регион, следим за ошибкой
         errRegs = ErrorCast<Error_RegionsList>(regList->ReleaseRegion( second_region ));
 
-        if (!errRegs || errRegs->Type() != ERL_Type::EXISTING_REG_INSERTION) {
+        if (!errRegs || errRegs->Elem() != ERL_Type::EXISTING_REG_INSERTION) {
             err = ERR_CUSTOM( err_mess );                                                                                   TRACE_CUSTOM_PRNT_CNT( err, "Wrong behaviour after second insertion" );
         }
         delete[] memoryPitch;
@@ -109,13 +109,13 @@ void RegionsList_Tester::Test_OverlappedInsertion()
 
         // ѕытаемс€ заинсертить перекрывающийс€ слева регион, следим за ошибкой
         auto errRegs = ErrorCast<Error_RegionsList>( regList->ReleaseRegion( left_overlapped ) );
-        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        if (!errRegs || errRegs->Elem() != ERL_Type::OVERLAPPED_REG_INSERTION)
         {
             err = ERR_CUSTOM( errMess + " insert left overlapped region)" );                                            TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after initial insertion" );
         }
         // ѕытаемс€ заинсертить перекрывающийс€ справа регион, следим за ошибкой
         errRegs = ErrorCast<Error_RegionsList>( regList->ReleaseRegion( right_overlapped ) );
-        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        if (!errRegs || errRegs->Elem() != ERL_Type::OVERLAPPED_REG_INSERTION)
         {
             err = ERR_CUSTOM( errMess + " insert right overlapped region)" );                                           TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after initial insertion" );
         }
@@ -125,43 +125,43 @@ void RegionsList_Tester::Test_OverlappedInsertion()
 
         // ѕытаемс€ заинсертить посередине перекрывающийс€ слева регион
         errRegs = ErrorCast<Error_RegionsList>( regList->ReleaseRegion( medium_left_overlapped ) );
-        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        if (!errRegs || errRegs->Elem() != ERL_Type::OVERLAPPED_REG_INSERTION)
         {
             err = ERR_CUSTOM( errMess + " insert medium left overlapped region)" );                                     TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after second insertion" );
         }
         // ѕытаемс€ заинсертить посередине перекрывающийс€ слева и смежный справа регион
         errRegs = ErrorCast<Error_RegionsList>(regList->ReleaseRegion( medium_left_overlapped_adj ));
-        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        if (!errRegs || errRegs->Elem() != ERL_Type::OVERLAPPED_REG_INSERTION)
         {
             err = ERR_CUSTOM( errMess + " insert medium left overlapped right-adjacent region)" );                      TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after second insertion" );
         }
         // ѕытаемс€ заинсертить посередине перекрывающийс€ справа регион
         errRegs = ErrorCast<Error_RegionsList>(regList->ReleaseRegion( medium_right_overlapped ));
-        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        if (!errRegs || errRegs->Elem() != ERL_Type::OVERLAPPED_REG_INSERTION)
         {
             err = ERR_CUSTOM( errMess + " insert medium right overlapped region)" );                                    TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after second insertion" );
         }
         // ѕытаемс€ заинсертить посередине перекрывающийс€ справа и смежный слева регион
         errRegs = ErrorCast<Error_RegionsList>(regList->ReleaseRegion( medium_right_overlapped_adj ));
-        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        if (!errRegs || errRegs->Elem() != ERL_Type::OVERLAPPED_REG_INSERTION)
         {
         	err = ERR_CUSTOM( errMess + " insert medium right overlapped left-adjacent region)" );                      TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after second insertion" );
         }
         // ѕытаемс€ заинсертить посередине перекрывающийс€ слева и справа регион
         errRegs = ErrorCast<Error_RegionsList>(regList->ReleaseRegion( medium_left_right ));
-        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        if (!errRegs || errRegs->Elem() != ERL_Type::OVERLAPPED_REG_INSERTION)
         {
             err = ERR_CUSTOM( errMess + " insert medium right and left overlapped region)" );                           TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after second insertion" );
         }
         // ѕытаемс€ заинсертить крайний левый перекрывающийс€ регион
         errRegs = ErrorCast<Error_RegionsList>(regList->ReleaseRegion( left_overlapped ));
-        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        if (!errRegs || errRegs->Elem() != ERL_Type::OVERLAPPED_REG_INSERTION)
         {
         	err = ERR_CUSTOM( errMess + " to insert left overlapped region)" );                                         TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after second insertion" );
         }
         // ѕытаемс€ заинсертить крайний правый перекрывающийс€ регион
         errRegs = ErrorCast<Error_RegionsList>(regList->ReleaseRegion( right_overlapped ));
-        if (!errRegs || errRegs->Type() != ERL_Type::OVERLAPPED_REG_INSERTION)
+        if (!errRegs || errRegs->Elem() != ERL_Type::OVERLAPPED_REG_INSERTION)
         {
             err = ERR_CUSTOM( errMess + " insert right overlapped region)" );                                           TRACE_CUSTOM_PRNT_CNT( err, "ReleaseRegion() Wrong behavior after second insertion" );
         }
@@ -195,7 +195,7 @@ void RegionsList_Tester::Test_GrabbingFromEmptyList()
         // ѕытаемс€ захватить регион из пустого списка, следим за ошибкой
         auto errRegs = ErrorCast<Error_RegionsList>( regList->GrabRegion( 1, &grabbedReg ) );
 
-        if (!errRegs || errRegs->Type() != ERL_Type::GRAB_FROM_EMPTY_LIST)
+        if (!errRegs || errRegs->Elem() != ERL_Type::GRAB_FROM_EMPTY_LIST)
         {
             err = ERR_CUSTOM( "Error isn't detected (Trying to grab region from empty S-List)" );                       TRACE_CUSTOM_PRNT_CNT( err, "GrabRegion() Wrong behavior after RegionsList creation" );
         }
@@ -243,7 +243,7 @@ void RegionsList_Tester::Test_GrabbingTooBigRegion()
         // ѕытаемс€ захватить слишком большой регион, следим за ошибкой
         auto errRegs = ErrorCast<Error_RegionsList>(regList->GrabRegion( 11, &grabbedReg ));
 
-        if (!errRegs || errRegs->Type() != ERL_Type::CONSISTENT_REG_NOTFOUND)
+        if (!errRegs || errRegs->Elem() != ERL_Type::CONSISTENT_REG_NOTFOUND)
         {
             err = ERR_CUSTOM( "Error isn't detected (Trying to grab region with size greater than S-List has)" );       TRACE_CUSTOM_PRNT_CNT( err, "GrabRegion() Wrong behavior after initial insertion" );
         }
@@ -268,7 +268,7 @@ void RegionsList_Tester::Test_GrabbingTooBigRegion()
 
         // ѕытаемс€ захватить слишком большой регион после второй вставки, следим за ошибкой
         errRegs = ErrorCast<Error_RegionsList>(regList->GrabRegion( 12, &grabbedReg ));
-        if (!errRegs || errRegs->Type() != ERL_Type::CONSISTENT_REG_NOTFOUND)
+        if (!errRegs || errRegs->Elem() != ERL_Type::CONSISTENT_REG_NOTFOUND)
         {
             err = ERR_CUSTOM( "Error isn't detected (Trying to grab the region with size greater than S-List has)" );   TRACE_CUSTOM_PRNT_CNT( err, "GrabRegion() Wrong behavior after second insertion" );
         }
@@ -778,7 +778,7 @@ void RegionsList_Tester::Test_GrabbingsComplex()
                         // ≈сли ожидаемый адрес захваченного региона - null, значит запрашиваемый регион слишком велик. GrabRegion() должна вернуть ошибку, а выходной указатель - остатьс€ неизменЄнным
                         if (req_size_exp_start.start == nullptr) {
                             auto grabErr = ErrorCast<Error_RegionsList>( err );
-                            if ( !grabErr || grabErr->Type() != ERL_Type::CONSISTENT_REG_NOTFOUND )
+                            if ( !grabErr || grabErr->Elem() != ERL_Type::CONSISTENT_REG_NOTFOUND )
                             {
                                 err = ERR_CUSTOM( "Incorrect condition didn't handled (Grab the region with size greater than S-List has)" );           TRACE_CUSTOM_CNT( err, "GrabRegion() Wrong behavior" );
                             }
@@ -966,11 +966,11 @@ void RegionsList_Tester::Test_GrabbingsInsertionsRandom(const ConfigGIR &conf)
                                 break;
                             continue;
                         }
-                        else if( !regListErr || ( regListErr->Type() != ERL_Type::GRAB_FROM_EMPTY_LIST && regListErr->Type() != ERL_Type::CONSISTENT_REG_NOTFOUND )) {
+                        else if( !regListErr || ( regListErr->Elem() != ERL_Type::GRAB_FROM_EMPTY_LIST && regListErr->Elem() != ERL_Type::CONSISTENT_REG_NOTFOUND )) {
                             err = grab_err;
                             break;
                         }
-                        if( ( regListErr->Type() == ERL_Type::GRAB_FROM_EMPTY_LIST || regListErr->Type() == ERL_Type::CONSISTENT_REG_NOTFOUND) && attempts_counter++ >= 5)
+                        if( ( regListErr->Elem() == ERL_Type::GRAB_FROM_EMPTY_LIST || regListErr->Elem() == ERL_Type::CONSISTENT_REG_NOTFOUND) && attempts_counter++ >= 5)
                             break;
                         continue;
                     }

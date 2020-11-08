@@ -23,6 +23,7 @@
     <ProjectGuid>{2A6D069E-0940-4E8E-AE89-04514AC092B0}</ProjectGuid>
     <RootNamespace>TestRegionsBasedAllocator</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Test_RegionsBasedAllocator</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -212,7 +213,17 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="RegionsBasedAllocator_Tester.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
     <ClCompile Include="Test_main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="RegionsBasedAllocator_Tester.h" />
+    <ClInclude Include="TestTypes.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

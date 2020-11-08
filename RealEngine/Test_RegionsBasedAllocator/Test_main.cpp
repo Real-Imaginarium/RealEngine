@@ -1,92 +1,35 @@
-#include "Vector.hpp"
-#include "RegionsBasedAllocator.hpp"
+#include "RegionsBasedAllocator_Tester.h"
 
-class Descriptor
+
+int main( int argc, const char **argv )
 {
-public:
-    Descriptor( std::string _desc )
-    {
-        desc = _desc;
-        if( desc == "1" ) { CPU = GPU = 1; }
-        else if( desc == "2" ) { CPU = GPU = 2; }
-        else if( desc == "3" ) { CPU = GPU = 3; }
-        else { CPU = GPU = -1; }
+    std::string args_str;
+    for( int i = 1; i < argc; ++i ) {
+        args_str += std::string( " " ) += std::string( argv[i] );
     }
-    ~Descriptor() {
-        desc.clear();
+    if( args_str.find( "--help" ) != std::string::npos ) {
+        std::cout << "RTFM!!!" << std::endl;
+        return 0;
     }
-    Descriptor( const Descriptor &other )
-    {
-        desc = other.desc;
-        if( desc == "1" ) { CPU = GPU = 1; }
-        else if( desc == "2" ) { CPU = GPU = 2; }
-        else if( desc == "3" ) { CPU = GPU = 3; }
-        else { CPU = GPU = -1; }
-    }
-    Descriptor( const Descriptor &&other ) noexcept
-    {
-        desc = other.desc;
-        if( desc == "1" ) { CPU = GPU = 1; }
-        else if( desc == "2" ) { CPU = GPU = 2; }
-        else if( desc == "3" ) { CPU = GPU = 3; }
-        else { CPU = GPU = -1; }
-    }
-    Descriptor &operator=( const Descriptor &other )
-    {
-        desc = std::string(other.desc);
-        if( desc == "1" ) { CPU = GPU = 1; }
-        else if( desc == "2" ) { CPU = GPU = 2; }
-        else if( desc == "3" ) { CPU = GPU = 3; }
-        else { CPU = GPU = -1; }
-        return *this;
-    }
-    Descriptor &operator=( Descriptor &&other ) noexcept
-    {
-        desc = std::string( other.desc );
-        if( desc == "1" ) { CPU = GPU = 1; }
-        else if( desc == "2" ) { CPU = GPU = 2; }
-        else if( desc == "3" ) { CPU = GPU = 3; }
-        else { CPU = GPU = -1; }
-        return *this;
-    }
+    RegionsBasedAllocator_Tester tester;
 
-private:
-    int CPU;            // Handler CPU
-    int GPU;            // Handler GPU
-    std::string desc;
-};
+    tester.Test_ManagedBlockCreation<uint8_t>();
+    tester.Test_ManagedBlockCreation<uint64_t>();
+    tester.Test_ManagedBlockCreation<double>();
+    tester.Test_ManagedBlockCreation<Type_1>();
 
+    tester.Test_Allocate_Most_Possible_And_Too_Big_Block<uint8_t>();
+    tester.Test_Allocate_Most_Possible_And_Too_Big_Block<uint64_t>();
+    tester.Test_Allocate_Most_Possible_And_Too_Big_Block<double>();
+    tester.Test_Allocate_Most_Possible_And_Too_Big_Block<Type_1>();
 
-int main()
-{
-    const size_t mem_size = 100;
-    Descriptor *mem = (Descriptor*)calloc( mem_size, sizeof( Descriptor ) );
-    uint8_t *mem2 = (uint8_t*)calloc( mem_size, sizeof( std::string ) );
+    tester.Test_Alloc_Dealloc_Random<uint8_t>();
+    tester.Test_Alloc_Dealloc_Random<uint16_t>();
+    tester.Test_Alloc_Dealloc_Random<uint32_t>();
+    tester.Test_Alloc_Dealloc_Random<uint64_t>();
 
-    Descriptor* arr[100];
-    for( size_t i = 0; i < 100; ++i ) {
-        arr[i] = mem + i;
-    }
-    try {
-        std::shared_ptr<RegionsBasedAllocator<Descriptor>> RB_Alloc( new RegionsBasedAllocator<Descriptor>( mem, mem_size ) );
-        std::shared_ptr<Vector<Descriptor>> vec(new Vector<Descriptor>( 2, RB_Alloc));
+    tester.Test_Allocator_Performance();
 
-        vec->EmplaceBack( "1" );
-        vec->EmplaceBack( "2" );
-        vec->EmplaceBack( "3" );
-        vec->EmplaceBack( "4" );
-        vec->EmplaceBack( "5" );
-        vec->EmplaceBack( "6" );
-        vec->EmplaceBack( "7" );
-        vec->EmplaceBack( "8" );
-        vec->EmplaceBack( "9" );
-        vec->EmplaceBack( "0" );
-
-    }
-    catch( Error_BasePtr e ) {
-        TRACE_CUSTOM_PRNT_RET_VAL( e, -1, "Something went wrong" );
-    }
-
-
+    system( "Pause" );
     return 0;
 }

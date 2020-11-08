@@ -24,7 +24,7 @@ public:
     Error_RegionsList( ERL_Type err_type, size_t size, const char *file, const char *func, int line, const char *logFile = g_error_log_name );
     Error_RegionsList( ERL_Type err_type, const char *file, const char *func, int line, const char *logFile = g_error_log_name );
 
-    ERL_Type Type() const { return m_errType; }
+    ERL_Type Elem() const { return m_errType; }
 
 protected:
     virtual std::string Name() const override;

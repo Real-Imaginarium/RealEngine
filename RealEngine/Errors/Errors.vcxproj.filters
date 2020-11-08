@@ -30,6 +30,9 @@
     <ClInclude Include="Error_MemAlloc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Error_Allocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Error_Base.cpp">
@@ -45,6 +48,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Error_MemAlloc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Error_Allocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -25,7 +25,7 @@
     <ClCompile Include="RegionsBasedAllocator.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IAllocator.h" />
+    <ClInclude Include="IRegionsBasedAllocator.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

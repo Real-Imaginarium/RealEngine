@@ -217,6 +217,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Error_Allocator.h" />
     <ClInclude Include="Error_Base.h" />
     <ClInclude Include="Error_Custom.h" />
     <ClInclude Include="Error_MemAlloc.h" />
@@ -224,6 +225,7 @@
     <ClInclude Include="Error_RegionsList.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Error_Allocator.cpp" />
     <ClCompile Include="Error_Base.cpp" />
     <ClCompile Include="Error_Custom.cpp" />
     <ClCompile Include="Error_MemAlloc.cpp" />

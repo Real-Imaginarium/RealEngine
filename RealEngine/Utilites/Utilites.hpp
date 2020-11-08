@@ -402,7 +402,7 @@ size_t FindRegion( const std::vector<REG>& in, const REG& toSearch )
         }
         return std::numeric_limits<size_t>::max();
     }
-    Log::warning() << "FindRegion(): Undefined Region Type received: " + std::string(typeid(REG_T).name()) << Log::endlog{};
+    Log::warning() << "FindRegion(): Undefined Region Elem received: " + std::string(typeid(REG_T).name()) << Log::endlog{};
     return std::numeric_limits<size_t>::max();
 }
 
@@ -474,7 +474,7 @@ Side DeleteRegion( std::vector<REG>& in, const REG& toDel )
         in.erase( in.begin() + del_index );
         return side;
     }
-    Log::warning() << "DeleteRegion(): Undefined Region Type received: " + std::string( typeid(REG_T).name() ) << Log::endlog{};
+    Log::warning() << "DeleteRegion(): Undefined Region Elem received: " + std::string( typeid(REG_T).name() ) << Log::endlog{};
     return Side_NONE;
 }
 
@@ -558,7 +558,7 @@ Error_BasePtr Attempt_calloc( uint8_t attemptions, uint16_t period_ms, size_t ca
                 break;
         }
         if (!output) {
-            return ERR_MEMALLOC( calloc_size, sizeof( T ), "Type is \"" + std::string( typeid( T ).name() ) + "\". Calloc() returned NULL after " + std::to_string( attemptions ) + " attempts." );
+            return ERR_MEMALLOC( calloc_size, sizeof( T ), "Elem is \"" + std::string( typeid( T ).name() ) + "\". Calloc() returned NULL after " + std::to_string( attemptions ) + " attempts." );
         }
     }
     return nullptr;
@@ -577,7 +577,7 @@ Error_BasePtr Attempt_realloc( uint8_t attemptions, uint16_t period_ms, size_t r
             }
         }
         if( !resized_block ) {
-            return ERR_MEMALLOC( output, realloc_size, "Type is \"" + std::string(typeid(T).name()) + "\". Realloc() returned NULL after " + std::to_string( attemptions ) + " attempts." );
+            return ERR_MEMALLOC( output, realloc_size, "Elem is \"" + std::string(typeid(T).name()) + "\". Realloc() returned NULL after " + std::to_string( attemptions ) + " attempts." );
         }
     }
     else {
