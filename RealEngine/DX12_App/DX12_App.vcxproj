@@ -20,10 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{2A6D069E-0940-4E8E-AE89-04514AC092B0}</ProjectGuid>
-    <RootNamespace>TestRegionsBasedAllocator</RootNamespace>
+    <ProjectGuid>{BF82E12B-48C4-44CC-A965-FD184E9D533C}</ProjectGuid>
+    <RootNamespace>DX12App</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Test_RegionsBasedAllocator</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -98,11 +97,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;$(SolutionDir)DX12_Abstractions\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -111,18 +110,13 @@
       <PrecompiledHeaderOutputFile />
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Utilites\$(PlatformShortName)\$(Configuration);$(SolutionDir)Errors\$(PlatformShortName)\$(Configuration);$(SolutionDir)Allocators\$(PlatformShortName)\$(Configuration);$(SolutionDir)Logger\$(PlatformShortName)\$(Configuration);$(SolutionDir)Containers\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)Utilites\$(PlatformShortName)\$(Configuration);$(SolutionDir)Errors\$(PlatformShortName)\$(Configuration);$(SolutionDir)Allocators\$(PlatformShortName)\$(Configuration);$(SolutionDir)Logger\$(PlatformShortName)\$(Configuration);$(SolutionDir)Containers\$(PlatformShortName)\$(Configuration);$(SolutionDir)DX12_Abstractions\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;DX12_Abstractions.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -131,26 +125,23 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;$(SolutionDir)DX12_Abstractions\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeaderFile />
       <PrecompiledHeaderOutputFile />
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <OmitFramePointers />
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Utilites\$(PlatformShortName)\$(Configuration);$(SolutionDir)Errors\$(PlatformShortName)\$(Configuration);$(SolutionDir)Allocators\$(PlatformShortName)\$(Configuration);$(SolutionDir)Logger\$(PlatformShortName)\$(Configuration);$(SolutionDir)Containers\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)Utilites\$(PlatformShortName)\$(Configuration);$(SolutionDir)Errors\$(PlatformShortName)\$(Configuration);$(SolutionDir)Allocators\$(PlatformShortName)\$(Configuration);$(SolutionDir)Logger\$(PlatformShortName)\$(Configuration);$(SolutionDir)Containers\$(PlatformShortName)\$(Configuration);$(SolutionDir)DX12_Abstractions\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;DX12_Abstractions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -159,26 +150,22 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;$(SolutionDir)DX12_Abstractions\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeaderFile />
       <PrecompiledHeaderOutputFile />
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Utilites\$(PlatformShortName)\$(Configuration);$(SolutionDir)Errors\$(PlatformShortName)\$(Configuration);$(SolutionDir)Allocators\$(PlatformShortName)\$(Configuration);$(SolutionDir)Logger\$(PlatformShortName)\$(Configuration);$(SolutionDir)Containers\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)Utilites\$(PlatformShortName)\$(Configuration);$(SolutionDir)Errors\$(PlatformShortName)\$(Configuration);$(SolutionDir)Allocators\$(PlatformShortName)\$(Configuration);$(SolutionDir)Logger\$(PlatformShortName)\$(Configuration);$(SolutionDir)Containers\$(PlatformShortName)\$(Configuration);$(SolutionDir)DX12_Abstractions\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;DX12_Abstractions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -186,11 +173,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;$(SolutionDir)DX12_Abstractions\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -199,32 +186,31 @@
       <PrecompiledHeaderOutputFile />
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Utilites\$(PlatformShortName)\$(Configuration);$(SolutionDir)Errors\$(PlatformShortName)\$(Configuration);$(SolutionDir)Allocators\$(PlatformShortName)\$(Configuration);$(SolutionDir)Logger\$(PlatformShortName)\$(Configuration);$(SolutionDir)Containers\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)Utilites\$(PlatformShortName)\$(Configuration);$(SolutionDir)Errors\$(PlatformShortName)\$(Configuration);$(SolutionDir)Allocators\$(PlatformShortName)\$(Configuration);$(SolutionDir)Logger\$(PlatformShortName)\$(Configuration);$(SolutionDir)Containers\$(PlatformShortName)\$(Configuration);$(SolutionDir)DX12_Abstractions\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;DX12_Abstractions.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="RegionsBasedAllocator_Tester.cpp">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Allocators\;$(SolutionDir)Errors\;$(SolutionDir)Logger\;$(SolutionDir)Containers\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    <ClCompile Include="DX12_App.cpp" />
+    <ClCompile Include="GameTimer.cpp" />
+    <ClCompile Include="main.cpp">
+      <OmitFramePointers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </OmitFramePointers>
     </ClCompile>
-    <ClCompile Include="TestTypes.cpp" />
-    <ClCompile Include="Test_main.cpp" />
+    <ClCompile Include="ResourceManager.cpp" />
+    <ClCompile Include="WinWorkflowManager.cpp" />
+    <ClCompile Include="MemoryManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="RegionsBasedAllocator_Tester.h" />
-    <ClInclude Include="TestTypes.h" />
+    <ClInclude Include="DX12_App.h" />
+    <ClInclude Include="GameTimer.h" />
+    <ClInclude Include="ResourceManager.h" />
+    <ClInclude Include="WinWorkflowManager.h" />
+    <ClInclude Include="MemoryManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

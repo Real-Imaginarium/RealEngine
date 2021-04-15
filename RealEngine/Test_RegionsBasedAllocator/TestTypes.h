@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RegionsAllocator.h"
+
 #include <string>
 #include <vector>
 
@@ -86,93 +88,18 @@ struct Type_6
     bool operator==( const Type_6 &other ) { return f1 == other.f1 && f2 == other.f2 && f3 == other.f3 && f4 == other.f4 && !strcmp(f5, other.f5); }
 };
 
-
-class Descriptor
-{
-public:
-    Descriptor( std::string _desc )
-    {
-        desc = _desc;
-        if( desc == "1" ) { CPU = GPU = 1; }
-        else if( desc == "2" ) { CPU = GPU = 2; }
-        else if( desc == "3" ) { CPU = GPU = 3; }
-        else { CPU = GPU = -1; }
-    }
-    ~Descriptor() {
-        desc.clear();
-    }
-    Descriptor( const Descriptor &other )
-    {
-        desc = other.desc;
-        if( desc == "1" ) { CPU = GPU = 1; }
-        else if( desc == "2" ) { CPU = GPU = 2; }
-        else if( desc == "3" ) { CPU = GPU = 3; }
-        else { CPU = GPU = -1; }
-    }
-    Descriptor( const Descriptor &&other ) noexcept
-    {
-        desc = other.desc;
-        if( desc == "1" ) { CPU = GPU = 1; }
-        else if( desc == "2" ) { CPU = GPU = 2; }
-        else if( desc == "3" ) { CPU = GPU = 3; }
-        else { CPU = GPU = -1; }
-    }
-    Descriptor &operator=( const Descriptor &other )
-    {
-        desc = std::string( other.desc );
-        if( desc == "1" ) { CPU = GPU = 1; }
-        else if( desc == "2" ) { CPU = GPU = 2; }
-        else if( desc == "3" ) { CPU = GPU = 3; }
-        else { CPU = GPU = -1; }
-        return *this;
-    }
-    Descriptor &operator=( Descriptor &&other ) noexcept
-    {
-        desc = std::string( other.desc );
-        if( desc == "1" ) { CPU = GPU = 1; }
-        else if( desc == "2" ) { CPU = GPU = 2; }
-        else if( desc == "3" ) { CPU = GPU = 3; }
-        else { CPU = GPU = -1; }
-        return *this;
-    }
-
-    std::string Desc() const { return desc; }
-
-    bool operator==( const Descriptor &other ) { return desc == other.desc; }
-
-private:
-    int CPU;            // Handler CPU
-    int GPU;            // Handler GPU
-    std::string desc;
-};
-
-
-static RegionsBasedAllocator<uint8_t> alloc( 1000000000 );
 class SomeObject
 {
 public:
-    SomeObject() : f1( 0x0102030405060708 ) {}
-    ~SomeObject()
-    {
-        size_t a = 7;
-    }
+    SomeObject() {}
+    ~SomeObject() {}
 
-    void *operator new( size_t size )
-    {
-        return ::new( (void *)alloc.Allocate( size ) ) SomeObject();
-    }
-    void *operator new[]( size_t size )
-    {
-        return ::operator new[]( size, (void *)alloc.Allocate( size ) );
-    }
-    void operator delete( void *start )
-    {
-        alloc.Deallocate( start, sizeof( SomeObject ) );
-    }
-    void operator delete[]( void *start )
-    {
-        alloc.Deallocate( start, *(size_t *)start * sizeof( SomeObject ) + sizeof( size_t ) );
-    }
-private:
-    uint64_t f1;
+    void *operator new( size_t size );
+    void *operator new[]( size_t size );
+    void operator delete( void *start );
+    void operator delete[]( void *start );
+//private:
+    static RegionsAllocator alloc;
+
+    uint64_t f1 = 3;
 };

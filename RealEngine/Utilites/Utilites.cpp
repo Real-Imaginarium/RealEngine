@@ -2,7 +2,7 @@
 
 namespace utils
 {
-size_t lower_bound( int* arr, size_t size, int value, bool& founded )
+size_t lower_bound( size_t * arr, size_t size, size_t value, bool& founded )
 {
     size_t l = 0;
     size_t h = size;
@@ -21,7 +21,7 @@ size_t lower_bound( int* arr, size_t size, int value, bool& founded )
 }
 
 
-size_t lower_bound( int* arr, size_t size, int value )
+size_t lower_bound( size_t * arr, size_t size, size_t value )
 {
     size_t l = 0;
     size_t h = size;

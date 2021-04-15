@@ -15,12 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Vector.hpp">
+    <ClCompile Include="Descriptor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Constant.hpp">
       <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ConstantsPull.hpp">
+    <ClInclude Include="Descriptor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

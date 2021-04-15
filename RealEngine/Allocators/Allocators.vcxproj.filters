@@ -18,12 +18,39 @@
     <ClCompile Include="RegionsList.hpp">
       <Filter>Файлы заголовков</Filter>
     </ClCompile>
-    <ClCompile Include="RegionsBasedAllocator.hpp">
-      <Filter>Файлы заголовков</Filter>
+    <ClCompile Include="DescriptorsAllocator.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="IAllocatorCore.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="RegionsAllocator.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="AtomicConstantsAllocator.cpp">
+      <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IRegionsBasedAllocator.h">
+    <ClInclude Include="DescriptorsAllocator.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="IAllocatorCore.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="IRegionsAllocator.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="IPullAllocator.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="RegionsAllocator.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="PullAllocator.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="AtomicConstantsAllocator.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

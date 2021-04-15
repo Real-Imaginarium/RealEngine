@@ -55,7 +55,7 @@ int main(int argc, const char** argv)
 
     std::unique_ptr<RegionsList_Tester> tester = std::make_unique<RegionsList_Tester>();
 
-    for( int i = 0; i < 50; ++i ) {
+    for( int i = 50; i < 50; ++i ) {
         if( DoubleInserion || AllTests ) {
             tester->Test_DoubleInserion();
         }
@@ -101,22 +101,22 @@ int main(int argc, const char** argv)
     }
 
     if (GrabingsComplex || AllTests) {
-        tester->Test_GrabbingsComplex();
+        //tester->Test_GrabbingsComplex();
     }
     if (InsertionsComplex || AllTests) {
-        tester->Test_InsertionsComplex();
+        //tester->Test_InsertionsComplex();
     }
     if (GrabbingsInsertionsRandom || AllTests) {
                                                         /* Trans   MemSize  Min  Max     */
-        tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  1000,    0,   0      } );
-        tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  1000,    0,   1      } );
-        tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  1000,    1,   1      } );
-        tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     99,  100    } );
-        tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     101, 101    } );
-        tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     100, 101    } );
-        tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     100, 100    } );
-        tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     0,   100    } );
-        tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 100000, 100000,  0,   120000 } );
+        //tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  1000,    0,   0      } );
+        //tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  1000,    0,   1      } );
+        //tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  1000,    1,   1      } );
+        //tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     99,  100    } );
+        //tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     101, 101    } );
+        //tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     100, 101    } );
+        //tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     100, 100    } );
+        //tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 10000,  100,     0,   100    } );
+        tester->Test_GrabbingsInsertionsRandom( ConfigGIR{ 100000, 100000,  1,   100 } );
     }
     system( "Pause" );
     return 0;

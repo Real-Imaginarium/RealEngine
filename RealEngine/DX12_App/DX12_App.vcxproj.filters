@@ -15,21 +15,39 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Test_main.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RegionsBasedAllocator_Tester.cpp">
+    <ClCompile Include="MemoryManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TestTypes.cpp">
+    <ClCompile Include="DX12_App.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WinWorkflowManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ResourceManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameTimer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="RegionsBasedAllocator_Tester.h">
+    <ClInclude Include="MemoryManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TestTypes.h">
+    <ClInclude Include="DX12_App.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WinWorkflowManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GameTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

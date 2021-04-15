@@ -15,7 +15,6 @@
 #include <map>
 #include <iostream>
 #include <sstream>
-#include <limits>
 #include <random>
 
 
@@ -36,6 +35,9 @@ template<class T>
 inline size_t lower_bound( RegionP<T> *arr, size_t size, const T* value );                 // lower_bound по RegionP.start
 
 template<class T>
+inline size_t lower_bound( T *arr, size_t size, const T value );                          // lower_bound по RegionP.start
+
+template<class T>
 inline size_t lower_bound( RegionS<T> *arr, size_t size, size_t value, bool& founded );    // lower_bound по RegionS.size, с подтверждением
 
 template<class T>
@@ -44,9 +46,9 @@ inline size_t lower_bound( RegionS<T> *arr, size_t size, size_t value );        
 template<class T>
 inline size_t lower_bound( RegionS<T> *arr, size_t size, const T* value );                 // lower_bound по RegionS.start
 
-size_t lower_bound( int* arr, size_t size, int value, bool& founded );                     // lower_bound по int, с подтверждением
+size_t lower_bound( size_t* arr, size_t size, size_t value, bool& founded );               // lower_bound по int, с подтверждением
 
-size_t lower_bound( int* arr, size_t size, int value );                                    // lower_bound по int
+size_t lower_bound( size_t* arr, size_t size, size_t value );                              // lower_bound по int
 
 template<class T>
 inline size_t upper_bound( RegionP<T> *arr, size_t size, T* value, bool& founded );        // upper_bound по RegionP.start, с подтверждением
@@ -199,6 +201,26 @@ size_t lower_bound( RegionP<T>* arr, size_t size, const T* value )
     while (l < h) {
         mid = (l + h) / 2;
         if (value <= arr[mid].start) {
+            h = mid;
+        }
+        else {
+            l = mid + 1;
+        }
+    }
+    return l;
+}
+
+
+template<class T>
+inline size_t lower_bound( T *arr, size_t size, const T value )
+{
+    size_t l = 0;
+    size_t h = size;
+    size_t mid;
+
+    while( l < h ) {
+        mid = ( l + h ) / 2;
+        if( value <= arr[mid] ) {
             h = mid;
         }
         else {
@@ -392,7 +414,7 @@ size_t FindRegion( const std::vector<REG>& in, const REG& toSearch )
 {
     if (!in.size()) {
         Log::warning() << "FindRegion(): Empty input vector passed in FindRegion()" << Log::endlog{};
-        return std::numeric_limits<size_t>::max();
+        return static_cast<size_t>(-1);
     }
     if constexpr (std::is_same_v<REG, RegionP<CELL_T>> || std::is_same_v<REG, RegionS<CELL_T>>)
     {
@@ -400,10 +422,10 @@ size_t FindRegion( const std::vector<REG>& in, const REG& toSearch )
             if (in[i].start == toSearch.start && in[i].size == toSearch.size)
                 return i;
         }
-        return std::numeric_limits<size_t>::max();
+        return static_cast<size_t>(-1);
     }
     Log::warning() << "FindRegion(): Undefined Region Elem received: " + std::string(typeid(REG_T).name()) << Log::endlog{};
-    return std::numeric_limits<size_t>::max();
+    return static_cast<size_t>(-1);
 }
 
 
@@ -412,7 +434,7 @@ template<class T>
 size_t Find_SList_InsertionIndex( const std::vector<RegionS<T>>& in, const RegionS<T>& toInsert )
 {
     if (!in.size()) {
-        return std::numeric_limits<size_t>::max();
+        return static_cast<size_t>(-1);
     }
     std::vector<RegionS<T>> subArray;
     size_t subArray_begin = 0;
@@ -467,7 +489,7 @@ Side DeleteRegion( std::vector<REG>& in, const REG& toDel )
     if constexpr (std::is_same_v<REG, RegionP<CELL_T>> || std::is_same_v<REG, RegionS<CELL_T>>)
     {
         size_t del_index = FindRegion<REG_T, CELL_T>( in, toDel );
-        if (del_index == std::numeric_limits<size_t>::max()) {
+        if ( del_index == static_cast<size_t>(-1) ) {
             return Side_NONE;
         }
         Side side = del_index >= in.size() / 2 ? Side_RIGHT : Side_LEFT;
@@ -489,7 +511,7 @@ std::string to_string( const RegionP<T>& obj )
     if (obj.size < 10) {
         fill = "0";
     }
-    return "[" + start + ";" + fill + size + "]";
+    return "[" + start + " ; " + fill + size + "]";
 }
 
 template<class T>

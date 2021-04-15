@@ -1030,6 +1030,12 @@ void RegionsList_Tester::Test_GrabbingsInsertionsRandom(const ConfigGIR &conf)
                     err = regList->ReleaseRegion( td.intermediate_reg );                                                TRACE_CUSTOM_BRK( err, "Error during releasing the region" );
                     auto stop = std::chrono::high_resolution_clock::now();
 
+                    static size_t max_list_size = 0;
+                    size_t curr_size = rl_manip::GetState<Region_P>( regList ).size;
+                    if( max_list_size < curr_size ) {
+                        max_list_size = curr_size;
+                    }
+
                     // Запоминаем результирующее состояние после релиза
                     err = rl_manip::GetRegionsListDetails( regList, td );                                               TRACE_CUSTOM_BRK( err, "Can't get RegionsList details after another one Release" );
                     performed_transactions.back().second.push_back( td );

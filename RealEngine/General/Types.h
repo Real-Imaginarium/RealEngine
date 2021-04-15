@@ -9,6 +9,10 @@ template<class T>
 struct RegionP {
     T *start = nullptr;     // Начало региона
     size_t size = 0;        // Размер региона, байт
+
+    bool operator==( T *rhs_start ) { return start == rhs_start; }
+
+    bool operator<=( RegionP *rhs ) { return start <= rhs->start; }
 };
 
 

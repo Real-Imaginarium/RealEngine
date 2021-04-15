@@ -19,13 +19,22 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AtomicConstantsAllocator.cpp" />
+    <ClCompile Include="DescriptorsAllocator.cpp" />
+    <ClCompile Include="IAllocatorCore.cpp" />
+    <ClCompile Include="RegionsAllocator.cpp" />
     <ClCompile Include="RegionsList.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="RegionsBasedAllocator.hpp" />
+    <ClInclude Include="AtomicConstantsAllocator.h" />
+    <ClInclude Include="DescriptorsAllocator.h" />
+    <ClInclude Include="IPullAllocator.h" />
+    <ClInclude Include="IAllocatorCore.h" />
+    <ClInclude Include="PullAllocator.h" />
+    <ClInclude Include="RegionsAllocator.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IRegionsBasedAllocator.h" />
+    <ClInclude Include="IRegionsAllocator.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -110,7 +119,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile />
-      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Logger\;$(SolutionDir)Errors\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Logger\;$(SolutionDir)Errors\;$(SolutionDir)DX12_Abstractions;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -137,7 +146,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Logger\;$(SolutionDir)Errors\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Logger\;$(SolutionDir)Errors\;$(SolutionDir)DX12_Abstractions;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderOutputFile />
       <LanguageStandard>stdcpp17</LanguageStandard>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
@@ -167,7 +176,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Logger\;$(SolutionDir)Errors\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Logger\;$(SolutionDir)Errors\;$(SolutionDir)DX12_Abstractions;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderOutputFile />
       <LanguageStandard>stdcpp17</LanguageStandard>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
@@ -201,7 +210,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Logger\;$(SolutionDir)Errors\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)General\;$(SolutionDir)Utilites\;$(SolutionDir)Logger\;$(SolutionDir)Errors\;$(SolutionDir)DX12_Abstractions;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeaderOutputFile />
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
