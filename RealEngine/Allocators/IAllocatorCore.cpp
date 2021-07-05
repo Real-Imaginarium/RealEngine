@@ -4,6 +4,8 @@
 #include "RegionsAllocator.h"
 #include "Utilites.hpp"
 
+#include <cassert>
+
 
 // Конструируется "сырой" аллокатор, использовать который можно будет только после инициализации управляемого блока одной из версий SetupManagedBlock().
 IAllocatorCore::IAllocatorCore( uint8_t mode, IManagedBlock *mb_impl )
@@ -66,9 +68,11 @@ void IAllocatorCore::SetupManagedBlock( size_t mem_size )
 
 // Запросить у внешнего аллокатора 'parent_alloc' блок размером, достаточным для размещения 'cell_num' ячеек дочернего аллокатора. Это значит, что если
 // размер ячейки 'parent_alloc' = 5 байт, а дочернего - 20 байт, то для размещения 3 таких ячеек понадобится 12 ячеек родительского аллокатора.  Отсюда
-// требование: размер ячейки дочернего аллокатора должен быть равен или кратен родительскому (в примере - кратен)
+// требование: размер ячейки родительского аллокатора д.б. долен либо равен дочернему (в примере - долен).
 void IAllocatorCore::SetupManagedBlock( size_t cell_num, RegionsAllocator *parent_alloc )
 {
+    assert(( parent_alloc->CellSize() <= CellSize()) && "Parent allocator's Cell Size must be <= than child's allocator" );
+
     if( !m_managed_block_ready )
     {
         m_parent_alloc = parent_alloc;

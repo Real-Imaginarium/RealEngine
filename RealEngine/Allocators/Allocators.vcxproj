@@ -24,6 +24,7 @@
     <ClCompile Include="IAllocatorCore.cpp" />
     <ClCompile Include="RegionsAllocator.cpp" />
     <ClCompile Include="RegionsList.hpp" />
+    <ClCompile Include="GPURegionsAllocator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AtomicConstantsAllocator.h" />
@@ -32,6 +33,7 @@
     <ClInclude Include="IAllocatorCore.h" />
     <ClInclude Include="PullAllocator.h" />
     <ClInclude Include="RegionsAllocator.h" />
+    <ClInclude Include="GPURegionsAllocator.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IRegionsAllocator.h" />

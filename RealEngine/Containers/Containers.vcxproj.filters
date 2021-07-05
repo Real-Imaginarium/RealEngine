@@ -18,9 +18,18 @@
     <ClCompile Include="Vector.hpp">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="ConstantsPull.hpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NamedVector.hpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstantsVector.hpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ConstantsPull.hpp">
+    <ClInclude Include="IndexedVector.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

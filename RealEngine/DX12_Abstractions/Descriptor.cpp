@@ -3,10 +3,11 @@
 
 
 Descriptor::Descriptor( ID3D12Device *dev, const std::string &name, const D3D12_RENDER_TARGET_VIEW_DESC &desc, ID3D12Resource *res )
-    : m_rtv_desc( desc )
+    : INamed( name )
+    , m_rtv_desc( desc )
     , m_device( dev )
     , m_type( DescriptorType::RTV )
-    , m_name( name )
+    //, m_name( name )
     , m_res( res )
     , m_cnt_res( nullptr )
     , m_alloc( nullptr )
@@ -21,10 +22,11 @@ Descriptor::Descriptor( ID3D12Device *dev, const std::string &name, const D3D12_
 
 
 Descriptor::Descriptor( ID3D12Device *dev, const std::string &name, const D3D12_DEPTH_STENCIL_VIEW_DESC &desc, ID3D12Resource *res )
-    : m_dsv_desc( desc )
+    : INamed( name )
+    , m_dsv_desc( desc )
     , m_device( dev )
     , m_type( DescriptorType::DSV )
-    , m_name( name )
+    //, m_name( name )
     , m_res( res )
     , m_cnt_res( nullptr )
     , m_alloc( nullptr )
@@ -34,10 +36,11 @@ Descriptor::Descriptor( ID3D12Device *dev, const std::string &name, const D3D12_
 
 
 Descriptor::Descriptor( ID3D12Device *dev, const std::string &name, const D3D12_UNORDERED_ACCESS_VIEW_DESC &desc, ID3D12Resource *res, ID3D12Resource *cnt_res )
-    : m_uav_desc( desc )
+    : INamed( name )
+    , m_uav_desc( desc )
     , m_device( dev )
     , m_type( DescriptorType::UAV )
-    , m_name( name )
+    //, m_name( name )
     , m_res( res )
     , m_cnt_res( cnt_res )
     , m_alloc( nullptr )
@@ -47,10 +50,11 @@ Descriptor::Descriptor( ID3D12Device *dev, const std::string &name, const D3D12_
 
 
 Descriptor::Descriptor( ID3D12Device *dev, const std::string &name, const D3D12_SHADER_RESOURCE_VIEW_DESC &desc, ID3D12Resource *res )
-    : m_srv_desc( desc )
+    : INamed( name )
+    , m_srv_desc( desc )
     , m_device( dev )
     , m_type( DescriptorType::SRV )
-    , m_name( name )
+    //, m_name( name )
     , m_res( res )
     , m_cnt_res( nullptr )
     , m_alloc( nullptr )
@@ -60,10 +64,11 @@ Descriptor::Descriptor( ID3D12Device *dev, const std::string &name, const D3D12_
 
 
 Descriptor::Descriptor( ID3D12Device *dev, const std::string &name, const D3D12_CONSTANT_BUFFER_VIEW_DESC &desc )
-    : m_cbv_desc( desc )
+    : INamed( name )
+    , m_cbv_desc( desc )
     , m_device( dev )
     , m_type( DescriptorType::CBV )
-    , m_name( name )
+    //, m_name( name )
     , m_res( nullptr )
     , m_cnt_res( nullptr )
     , m_alloc( nullptr )
@@ -72,7 +77,7 @@ Descriptor::Descriptor( ID3D12Device *dev, const std::string &name, const D3D12_
 }
 
 
-Descriptor::Descriptor( const Descriptor &other )
+Descriptor::Descriptor( const Descriptor &other ) : INamed( other )
 {
     m_device = other.m_device;
     m_type = other.m_type;

@@ -19,22 +19,22 @@ public:
     //  онструируетс€ "сырой" аллокатор, использовать который можно будет только после инициализации управл€емого блока одной из версий SetupManagedBlock().
     RegionsAllocator( uint8_t mode, ManagedBlockRB_Impl *mb_impl = nullptr );
 
-    //  онструктор создаЄт управл€емый блок пам€ти размером 'mem_size' байт
+    //  онструктор создаЄт управл€емый блок пам€ти размером 'mem_size' байт (€чеек)
     RegionsAllocator( size_t mem_size, uint8_t mode, ManagedBlockRB_Impl *mb_impl = nullptr );
 
-    //  онструктор создаЄт управл€емый блок пам€ти размером 'mem_size' байт, запрашива€ его у внешнего аллокатора 'parent_alloc'
+    //  онструктор создаЄт управл€емый блок пам€ти размером 'mem_size' байт (€чеек), запрашива€ его у родительского аллокатора 'parent_alloc'
     RegionsAllocator( size_t mem_size, RegionsAllocator *parent_alloc, bool clean_when_dealloc, ManagedBlockRB_Impl *mb_impl = nullptr );
 
-    //  онструктору передаЄтс€ управл€емый блок пам€ти с началом в 'mem_start', размером 'mem_size' байт, созданный заранее
+    //  онструктору передаЄтс€ управл€емый блок пам€ти с началом в 'mem_start', размером 'mem_size' байт (€чеек), созданный заранее
     RegionsAllocator( uint8_t *mem_start, size_t mem_size, uint8_t mode, ManagedBlockRB_Impl *mb_impl = nullptr );
 
-    // «апрашивает кусок пам€ти размером 'size' байт
+    // «апрашивает кусок пам€ти размером 'size' байт (€чеек)
     virtual uint8_t *Allocate( size_t size ) override;
 
-    // –елизит кусок пам€ти с началом в 'start' и размером 'size' байт
+    // –елизит кусок пам€ти с началом в 'start' и размером 'size' байт (€чеек)
     virtual Error_BasePtr Deallocate( void *start, size_t size ) override;
 
-private:
+protected:
     ManagedBlockRB_Impl *m_casted_mb;                                           // ѕросто кастованный указатель на реализацию IManagedBlock, чтобы не кастовать каждый раз
 };
 

@@ -9,26 +9,26 @@ RegionsAllocator::RegionsAllocator( uint8_t mode, ManagedBlockRB_Impl *mb_impl )
     , m_casted_mb( mb_impl ? mb_impl : dynamic_cast<ManagedBlockRB_Impl*>( m_mb_impl.get()))
 {}
 
-//  онструктор создаЄт управл€емый блок пам€ти размером 'mem_size' байт
+//  онструктор создаЄт управл€емый блок пам€ти размером 'mem_size' байт (€чеек)
 RegionsAllocator::RegionsAllocator( size_t mem_size, uint8_t mode, ManagedBlockRB_Impl *mb_impl )
     : IAllocatorCore( mem_size, mode, mb_impl ? mb_impl : new ManagedBlockRB_Impl )
     , m_casted_mb( mb_impl ? mb_impl : dynamic_cast<ManagedBlockRB_Impl*>( m_mb_impl.get()))
 {}
 
-//  онструктор создаЄт управл€емый блок пам€ти размером 'mem_size' байт, запрашива€ его у внешнего аллокатора 'parent_alloc'
+//  онструктор создаЄт управл€емый блок пам€ти размером 'mem_size' байт (€чеек), запрашива€ его у внешнего аллокатора 'parent_alloc'
 RegionsAllocator::RegionsAllocator( size_t mem_size, RegionsAllocator *parent_alloc, bool clean_when_dealloc, ManagedBlockRB_Impl *mb_impl )
     : IAllocatorCore( mem_size, parent_alloc, clean_when_dealloc, mb_impl ? mb_impl : new ManagedBlockRB_Impl )
     , m_casted_mb( mb_impl ? mb_impl : dynamic_cast<ManagedBlockRB_Impl*>( m_mb_impl.get()))
 {}
 
-//  онструктору передаЄтс€ управл€емый блок пам€ти с началом в 'mem_start', размером 'mem_size' байт, созданный заранее
+//  онструктору передаЄтс€ управл€емый блок пам€ти с началом в 'mem_start', размером 'mem_size' байт (€чеек), созданный заранее
 RegionsAllocator::RegionsAllocator( uint8_t *mem_start, size_t mem_size, uint8_t mode, ManagedBlockRB_Impl *mb_impl )
     : IAllocatorCore( mem_start, mem_size, mode, mb_impl ? mb_impl : new ManagedBlockRB_Impl )
     , m_casted_mb( mb_impl ? mb_impl : dynamic_cast<ManagedBlockRB_Impl*>( m_mb_impl.get()))
 {}
 
 
-// «апрашивает кусок пам€ти размером 'size' байт
+// «апрашивает кусок пам€ти размером 'size' байт (€чеек)
 uint8_t *RegionsAllocator::Allocate( size_t size )
 {
     uint8_t *p = nullptr;
@@ -52,7 +52,7 @@ uint8_t *RegionsAllocator::Allocate( size_t size )
 }
 
 
-// –елизит кусок пам€ти с началом в 'start' и размером 'size' байт
+// –елизит кусок пам€ти с началом в 'start' и размером 'size' байт (€чеек)
 Error_BasePtr RegionsAllocator::Deallocate( void *start, size_t size )
 {
     // ѕровер€ем, что деаллоцируемый регион находитс€ в пределах управл€емого блока

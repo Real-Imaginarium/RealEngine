@@ -2,6 +2,7 @@
 
 #include "GameTimer.h"
 #include "ResourceManager.h"
+#include "Updater.h"
 #include "WinWorkflowManager.h"
 
 #include <memory>
@@ -29,8 +30,12 @@ public:
 
     int Run();
 
+    void Update( GameTimer *gt );
+
 private:
     void Draw( GameTimer *gt );
+
+    void DrawRenderItems();
 
     bool Init_MemoryManager();
 
@@ -77,6 +82,9 @@ private:
     static void OnMouseMove( size_t pos_x, size_t pos_y );
     static void OnKeyUp( size_t key );
 
+
+    void TestUpdateMaterial();
+
     static DX12_App                     *m_dx12_app;
 
     std::unique_ptr<WinWorkflowManager> m_window_manager;
@@ -104,4 +112,6 @@ private:
     uint8_t                             m_msaa_quality;
     bool                                m_msaa_enabled;
     bool                                m_app_paused;
+
+    std::unique_ptr<Updater>            m_updater;
 };

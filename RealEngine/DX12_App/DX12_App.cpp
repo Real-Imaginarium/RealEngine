@@ -1,10 +1,12 @@
 #include "DX12_App.h"
 
+#include "BasicMaterial.h"
+#include "ConstantsVector.hpp"
 #include "DxException.h"
 #include "LogError.h"
 #include "LogInfo.h"
 #include "MemoryManager.h"
-
+#include "RenderItem.h"
 
 #include <cassert>
 #include <DirectXColors.h>
@@ -31,6 +33,7 @@ DX12_App::DX12_App( HINSTANCE app_inst )
     , m_msaa_quality( 0 )       // «апрашиваетс€ дл€ заданного формата backbuffer'а
     , m_msaa_enabled( false )
     , m_app_paused( false )
+    , m_updater( new Updater )
 {
     assert( m_dx12_app == nullptr && "There can be only one DX12_App" );
     m_dx12_app = this;
@@ -47,14 +50,21 @@ bool DX12_App::Initialize()
             continue;
         if( !Init_Device() )
             continue;
+
+        // Reset the command list to prep for initialization commands.
+        THROW_ON_FAIL( m_cmd_list->Reset( m_cmd_list_alloc.Get(), nullptr ) );
+
         if( !Init_ResourceManager() )
             continue;
+
         MakeDepthBufferReady();
         SetupViewPort( 0, 0, m_window_manager->Width(), m_window_manager->Height(), 0.0f, 1.0f );
         SetupScissorRect( 0, 0, m_window_manager->Width(), m_window_manager->Height());
         ret = true;
     } 
     while( 0 );
+
+    Resize( m_window_manager->Width(), m_window_manager->Height() );
 
     return ret;
 }
@@ -101,7 +111,7 @@ int DX12_App::Run()
             if( !m_app_paused )
             {
                 CalculateFrameStats();
-                // TODO: Update( mTimer );
+                Update( &m_timer );
                 Draw( &m_timer );
             }
             else
@@ -114,27 +124,50 @@ int DX12_App::Run()
 }
 
 
+void DX12_App::Update( GameTimer *gt )
+{
+    float angle = gt->DeltaTime() * 36; // 36 град/сек
+    m_resource_manager->m_render_items["GreenStone"].RotateX( angle );
+    m_resource_manager->m_render_items["RedStone"].RotateY( angle );
+    m_resource_manager->m_render_items["BlueStone"].RotateZ( angle );
+
+    m_updater->AddItemToUpdate( &m_resource_manager->m_render_items["GreenStone"] );
+    m_updater->AddItemToUpdate( &m_resource_manager->m_render_items["RedStone"] );
+    m_updater->AddItemToUpdate( &m_resource_manager->m_render_items["BlueStone"] );
+
+    m_updater->UpdateItems();
+}
+
+
 void DX12_App::Draw( GameTimer *gt )
 {
     // Reuse the memory associated with command recording. We can only reset when the associated command lists have finished execution on the GPU.
-    m_cmd_list_alloc->Reset();
+    THROW_ON_FAIL( m_cmd_list_alloc->Reset());
 
     // A command list can be reset after it has been added to the command queue via ExecuteCommandList. Reusing the command list reuses memory.
-    THROW_ON_FAIL( m_cmd_list->Reset( m_cmd_list_alloc.Get(), nullptr ) );
-
-    // Indicate a state transition on the resource usage.
-    m_cmd_list->ResourceBarrier( 1, &CD3DX12_RESOURCE_BARRIER::Transition( m_resource_manager->CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET ));
+    THROW_ON_FAIL( m_cmd_list->Reset( m_cmd_list_alloc.Get(), m_resource_manager->mPSOs["opaque_wireframe"].Get()));
 
     // Set the viewport and scissor rect.  This needs to be reset whenever the command list is reset.
     m_cmd_list->RSSetViewports( 1, &m_screen_viewport );
     m_cmd_list->RSSetScissorRects( 1, &m_scissor_rect );
 
+    // Indicate a state transition on the resource usage.
+    m_cmd_list->ResourceBarrier( 1, &CD3DX12_RESOURCE_BARRIER::Transition( m_resource_manager->CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET ));
+
     // Clear the back buffer and depth buffer.
-    m_cmd_list->ClearRenderTargetView( m_resource_manager->CurrentBackBufferView(), DirectX::Colors::SteelBlue, 0, nullptr );
+    m_cmd_list->ClearRenderTargetView( m_resource_manager->CurrentBackBufferView(), DirectX::Colors::Black, 0, nullptr );
     m_cmd_list->ClearDepthStencilView( m_resource_manager->DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr );
 
     // Specify the buffers we are going to render to.
     m_cmd_list->OMSetRenderTargets( 1, &m_resource_manager->CurrentBackBufferView(), true, &m_resource_manager->DepthStencilView());
+
+    m_cmd_list->SetGraphicsRootSignature( m_resource_manager->m_root_signature.Get() );
+
+    m_cmd_list->SetGraphicsRootConstantBufferView( 1, m_resource_manager->m_main_pass_constant->va );   // cbPass
+
+    // Draw render items
+    m_cmd_list->SetGraphicsRootShaderResourceView( 3, m_resource_manager->m_material_structs.VirtualStartAddress());
+    DrawRenderItems();
 
     // Indicate a state transition on the resource usage.
     m_cmd_list->ResourceBarrier( 1, &CD3DX12_RESOURCE_BARRIER::Transition( m_resource_manager->CurrentBackBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT ));
@@ -152,6 +185,28 @@ void DX12_App::Draw( GameTimer *gt )
 
     // Wait until frame commands are complete. This waiting is inefficient and is done for simplicity. Later we will show how to organize our rendering code so we do not have to wait per frame.
     FlushCommandQueue();
+}
+
+
+void DX12_App::DrawRenderItems()
+{
+    // For each render item...
+    for( size_t i = 0; i < m_resource_manager->m_render_items.Size(); ++i )
+    {
+        auto ri = m_resource_manager->m_render_items[i];
+
+        m_cmd_list->IASetVertexBuffers( 0, 1, &m_resource_manager->m_geometry.VertexBufferView());
+        m_cmd_list->IASetIndexBuffer( &m_resource_manager->m_geometry.IndexBufferView());
+        m_cmd_list->IASetPrimitiveTopology( ri.primitive_type );
+
+        m_cmd_list->SetGraphicsRootConstantBufferView( 0, ri.obj_constant->va );                                                                // cbPerObject
+
+        size_t mat_index = *ri.material_index;
+
+        //m_cmd_list->SetGraphicsRootConstantBufferView( 2, ri.vec_materials->operator[]( mat_index ).m_cvec_ptr->operator[]( mat_index ).va );   // cbPerMaterial
+
+        m_cmd_list->DrawIndexedInstanced( 36, 1, 0, 0, 0 );
+    }
 }
 
 
@@ -215,7 +270,17 @@ bool DX12_App::Init_ResourceManager()
         return false;
     }
 
-    return m_resource_manager->Initialize( m_device.Get(), swapchain, ds_buffer, m_depthstencil_format );
+    bool res = m_resource_manager->Initialize( m_device.Get(), m_cmd_list.Get(), swapchain, ds_buffer, m_depthstencil_format );
+
+    // Execute the initialization commands.
+    THROW_ON_FAIL( m_cmd_list->Close());
+    ID3D12CommandList *cmdsLists[] = { m_cmd_list.Get() };
+    m_cmd_queue->ExecuteCommandLists( _countof( cmdsLists ), cmdsLists );
+    
+    // Wait until initialization is complete.
+    FlushCommandQueue();
+
+    return res;
 }
 
 
@@ -471,7 +536,23 @@ void DX12_App::OnMouseMove( size_t pos_x, size_t pos_y )
 
 void DX12_App::OnKeyUp( size_t key )
 {
-    if( key == VK_F2 ) {
-        m_dx12_app->ToggleMSAA();
+    switch( key )
+    {
+        case VK_F2: {
+            m_dx12_app->ToggleMSAA();
+            break;
+        }
+        case VK_HOME: {
+            m_dx12_app->TestUpdateMaterial();
+            break;
+        }
     }
 }
+
+
+void DX12_App::TestUpdateMaterial()
+{
+    m_resource_manager->m_materials["M_Green"].SetColor( XMFLOAT4{ 0.7f, 0.0f, 1.0f, 1.0f } );
+    m_updater->AddItemToUpdate( &m_resource_manager->m_materials["M_Green"] );
+}
+

@@ -8,107 +8,83 @@ const size_t ManagedBlockC_Impl::g_minimum_size_of_constant = 256;
 
 // Конструируется "сырой" аллокатор, использовать который можно будет только после инициализации управляемого блока одной из версий SetupManagedBlock().
 AtomicConstantsAllocator::AtomicConstantsAllocator( uint8_t mode, ManagedBlockC_Impl *mb_impl )
-    : RegionsAllocator( mode, mb_impl ? mb_impl : new ManagedBlockC_Impl( nullptr ))
+    : GPURegionsAllocator( mode, 
+                           mb_impl ? mb_impl : new ManagedBlockC_Impl( nullptr ))
     , m_casted_mb( dynamic_cast<ManagedBlockC_Impl*>( m_mb_impl.get()))
 {}
 
 
 // Конструктор создаёт управляемый блок памяти размером, достаточным для размещения 'num_constants' элементарных (256 байт) констант
 AtomicConstantsAllocator::AtomicConstantsAllocator( ID3D12Device *dev, size_t num_constants, uint8_t mode, ManagedBlockC_Impl *mb_impl )
-    : RegionsAllocator( mode, mb_impl ? mb_impl : new ManagedBlockC_Impl( nullptr ) )
-    , m_casted_mb( dynamic_cast<ManagedBlockC_Impl *>( m_mb_impl.get() ) )
+    : GPURegionsAllocator( mode, 
+                           mb_impl ? mb_impl : new ManagedBlockC_Impl( nullptr ))
+    , m_casted_mb( dynamic_cast<ManagedBlockC_Impl*>( m_mb_impl.get()))
 {
-    SetupManagedBlock( dev, num_constants * ManagedBlockC_Impl::g_minimum_size_of_constant );
+    SetupManagedBlock( dev, num_constants );
+}
+
+
+// Конструктор создаёт управляемый блок памяти размером 'num_constants' элементарных (256 байт) констант, запрашивая его у родительского аллокатора 'parent_alloc'
+AtomicConstantsAllocator::AtomicConstantsAllocator( ID3D12Device *dev, size_t num_constants, GPURegionsAllocator *parent_alloc, bool clean_when_dealloc, ManagedBlockC_Impl *mb_impl )
+    : GPURegionsAllocator( static_cast<uint8_t>( clean_when_dealloc ? Mode::CLEAN_WHEN_DEALLOC : Mode::NO_FREE_NO_CLEANUP ),
+                           mb_impl ? mb_impl : new ManagedBlockC_Impl( nullptr ))
+    , m_casted_mb( dynamic_cast<ManagedBlockC_Impl*>( m_mb_impl.get()))
+{
+    SetupManagedBlock( dev, num_constants, parent_alloc );
+}
+
+
+// Конструктору передаётся управляемый блок памяти на GPU с началом в 'mem_start', размером 'num_constants' элементарных (256 байт) констант, созданный заранее
+AtomicConstantsAllocator::AtomicConstantsAllocator( ID3D12Device *dev, CP_ID3D12Resource buffer, uint8_t *mem_start, size_t num_constants, uint8_t mode, ManagedBlockC_Impl *mb_impl )
+    : GPURegionsAllocator( mode,
+                           mb_impl ? mb_impl : new ManagedBlockC_Impl( nullptr ))
+    , m_casted_mb( dynamic_cast<ManagedBlockC_Impl*>( m_mb_impl.get()))
+{
+    SetupManagedBlock( dev, buffer, mem_start, num_constants );
 }
 
 
 // Создать управляемый блок памяти для размещения 'num_constants' элементарных (256 байт) констант
 void AtomicConstantsAllocator::SetupManagedBlock( ID3D12Device *dev, size_t num_constants )
 {
-    m_casted_mb->SetDevice( dev );
-    IAllocatorCore::SetupManagedBlock( nullptr, num_constants * ManagedBlockC_Impl::g_minimum_size_of_constant );
+    GPURegionsAllocator::SetupManagedBlock( dev, num_constants * ManagedBlockC_Impl::g_minimum_size_of_constant );
+}
+
+
+// Создать управляемый блок памяти для размещения 'num_constants' элементарных (256 байт) констант, запрашивая его у родительского аллокатора 'parent_alloc'
+void AtomicConstantsAllocator::SetupManagedBlock( ID3D12Device *dev, size_t num_constants, GPURegionsAllocator *parent_alloc )
+{
+    GPURegionsAllocator::SetupManagedBlock( dev, num_constants, parent_alloc );
+}
+
+
+// Создать управляемый блок памяти для размещения 'num_constants' элементарных (256 байт) констант, запрашивая его у родительского аллокатора 'parent_alloc'
+void AtomicConstantsAllocator::SetupManagedBlock( ID3D12Device *dev, CP_ID3D12Resource buffer, uint8_t *mem_start, size_t num_constants )
+{
+    GPURegionsAllocator::SetupManagedBlock( dev, buffer, mem_start, num_constants * ManagedBlockC_Impl::g_minimum_size_of_constant );
 }
 
 
 // Запрашивает пачку элементарных (256 байт) констант количеством 'size' (возвращаемый указатель предполагает приведение к константе)
 uint8_t *AtomicConstantsAllocator::Allocate( size_t size )
 {
-    return RegionsAllocator::Allocate( size * ManagedBlockC_Impl::g_minimum_size_of_constant );
+    return GPURegionsAllocator::Allocate( size * ManagedBlockC_Impl::g_minimum_size_of_constant );
 }
 
 
 // Релизит пачку констант минимального размера (256 байт) с началом в 'start' и количеством 'size' констант
 Error_BasePtr AtomicConstantsAllocator::Deallocate( void *start, size_t size )
 {
-    return RegionsAllocator::Deallocate( start, size * ManagedBlockC_Impl::g_minimum_size_of_constant );
+    return GPURegionsAllocator::Deallocate( start, size * ManagedBlockC_Impl::g_minimum_size_of_constant );
 }
-
-
-// Вычисляет виртуальный адрес ресурса в GPU для отображённого на этот ресурс указателя в CPU
-D3D12_GPU_VIRTUAL_ADDRESS AtomicConstantsAllocator::CalculateVirtualAddress( void *ptr )
-{
-    if( !ptr || ptr > ManagedBlockStart() || ptr < ManagedBlockStart() )
-    {
-        return 0;
-    }
-
-    // Вычисляем оффсет указателя относительно начала управляемого блока, затем прибавляем его к виртуальному адресу на начало ресурса в GPU
-    return m_casted_mb->m_constants_buffer->GetGPUVirtualAddress() + ( ManagedBlockStart() - (uint8_t*)ptr );
-}
-
 
 // К-тор блока
-ManagedBlockC_Impl::ManagedBlockC_Impl( ID3D12Device *dev )
-    : m_device( dev )
-    , m_constants_buffer( nullptr )
+ManagedBlockC_Impl::ManagedBlockC_Impl( ID3D12Device *dev ) : ManagedBlockRWS_Impl( dev )
 {}
-
-
-// Инициализация блока
-void ManagedBlockC_Impl::SetupManagedBlockImpl( uint8_t *mem_start, size_t mem_size )
-{
-    mem_start = nullptr;    // Обнуляем значение указателя, т.к. в данной реализации оно не играет роли, указатель определяется через ID3D12Resource::map() (см. далее)
-
-    // Если m_device в конструкторе был установлен в nullptr - нужно сначала вызвать SetDevice() 
-    if( !m_device )
-    {
-        return;
-    }
-
-    // Создаём буфер на GPU размером 'mem_size' для хранения нужного количества констант (определяется к-тором аллокатора)
-    THROW_ON_FAIL( m_device->CreateCommittedResource( &CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_UPLOAD ),
-                                                      D3D12_HEAP_FLAG_NONE,
-                                                      &CD3DX12_RESOURCE_DESC::Buffer( mem_size ),
-                                                      D3D12_RESOURCE_STATE_GENERIC_READ,
-                                                      nullptr,
-                                                      IID_PPV_ARGS( &m_constants_buffer )));
-
-    // Мапимся на созданный ресурс и завершаем инициализацию блока
-    THROW_ON_FAIL( m_constants_buffer->Map( 0, nullptr, reinterpret_cast<void**>( &mem_start )));
-
-    ManagedBlockRB_Impl::SetupManagedBlockImpl( mem_start, mem_size );
-}
-
-
-// Сброс блока
-void ManagedBlockC_Impl::ResetManagedBlockImpl()
-{
-    m_constants_buffer->Unmap( 0, nullptr );
-}
 
 
 // Размер ячейки памяти, байт, которыми оперирует аллокатор
 size_t ManagedBlockC_Impl::CellSizeImpl()
 {
     return g_minimum_size_of_constant;
-}
-
-
-// Установка m_device, если в к-тор был передан nullptr
-void ManagedBlockC_Impl::SetDevice( ID3D12Device *dev )
-{
-    if( !m_device )
-    {
-        m_device = dev;
-    }
 }

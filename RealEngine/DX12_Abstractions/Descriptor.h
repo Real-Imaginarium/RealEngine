@@ -2,6 +2,8 @@
 
 #include "d3dx12.h"
 
+#include "INamed.h"
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -27,7 +29,7 @@ enum class DescriptorType : uint8_t
 //  на GPU.
 //     онструкторы скрыты дл€ предотвращени€ возможности построени€ дескриптора на участке пам€ти,  не принадлежащем DescriptorsAllocator'у,  т.к. это приведЄт к крашу в
 //  рантайме. ¬место этого созданием/разрушением дескриптора занимаютс€ статические методы CreateDescriptor(...) и DestroyDescriptor(...) в разных вариаци€х.
-class Descriptor
+class Descriptor : public INamed
 {
     friend class ManagedBlockD_Impl;
     friend class Vector<Descriptor, DescriptorsAllocator>;
@@ -58,7 +60,7 @@ public:
 
     DescriptorType Type() const { return m_type; }
 
-    std::string Name() const { return m_name; }
+    //std::string Name() const { return m_name; }
 
     CD3DX12_CPU_DESCRIPTOR_HANDLE CPU_Handle() const { return m_cpu_handle; }
 
@@ -86,7 +88,7 @@ private:
     };
     ID3D12Device                            *m_device;
     DescriptorType                          m_type;
-    std::string                             m_name;
+    //std::string                             m_name;
     ID3D12Resource                          *m_res;
     ID3D12Resource                          *m_cnt_res;
     DescriptorsAllocator                    *m_alloc;

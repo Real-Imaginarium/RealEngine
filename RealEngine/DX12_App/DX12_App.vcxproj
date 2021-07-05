@@ -115,7 +115,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Utilites\$(PlatformShortName)\$(Configuration);$(SolutionDir)Errors\$(PlatformShortName)\$(Configuration);$(SolutionDir)Allocators\$(PlatformShortName)\$(Configuration);$(SolutionDir)Logger\$(PlatformShortName)\$(Configuration);$(SolutionDir)Containers\$(PlatformShortName)\$(Configuration);$(SolutionDir)DX12_Abstractions\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;DX12_Abstractions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;d3d12.lib;dxgi.lib;Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;DX12_Abstractions.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -138,7 +138,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Utilites\$(PlatformShortName)\$(Configuration);$(SolutionDir)Errors\$(PlatformShortName)\$(Configuration);$(SolutionDir)Allocators\$(PlatformShortName)\$(Configuration);$(SolutionDir)Logger\$(PlatformShortName)\$(Configuration);$(SolutionDir)Containers\$(PlatformShortName)\$(Configuration);$(SolutionDir)DX12_Abstractions\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;DX12_Abstractions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;d3d12.lib;dxgi.lib;Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;DX12_Abstractions.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
     </Link>
@@ -162,7 +162,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Utilites\$(PlatformShortName)\$(Configuration);$(SolutionDir)Errors\$(PlatformShortName)\$(Configuration);$(SolutionDir)Allocators\$(PlatformShortName)\$(Configuration);$(SolutionDir)Logger\$(PlatformShortName)\$(Configuration);$(SolutionDir)Containers\$(PlatformShortName)\$(Configuration);$(SolutionDir)DX12_Abstractions\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;DX12_Abstractions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;d3d12.lib;dxgi.lib;Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;DX12_Abstractions.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
     </Link>
@@ -191,11 +191,12 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)Utilites\$(PlatformShortName)\$(Configuration);$(SolutionDir)Errors\$(PlatformShortName)\$(Configuration);$(SolutionDir)Allocators\$(PlatformShortName)\$(Configuration);$(SolutionDir)Logger\$(PlatformShortName)\$(Configuration);$(SolutionDir)Containers\$(PlatformShortName)\$(Configuration);$(SolutionDir)DX12_Abstractions\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;DX12_Abstractions.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;d3d12.lib;dxgi.lib;Utilites.lib;Allocators.lib;Errors.lib;Logger.lib;Containers.lib;DX12_Abstractions.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DX12_App.cpp" />
+    <ClCompile Include="DX12_Utils.cpp" />
     <ClCompile Include="GameTimer.cpp" />
     <ClCompile Include="main.cpp">
       <OmitFramePointers Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -207,10 +208,55 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DX12_App.h" />
+    <ClInclude Include="DX12_Utils.h" />
     <ClInclude Include="GameTimer.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="WinWorkflowManager.h" />
     <ClInclude Include="MemoryManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\Shaders\color.hlsl">
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">VS</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">VS</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VS</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VS</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="PS_Opaque.hlsl">
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">PS</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.1</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PS</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.1</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PS</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PS</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="VS_Standard.hlsl">
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">VS</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.1</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">VS</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.1</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VS</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VS</EntryPointName>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
